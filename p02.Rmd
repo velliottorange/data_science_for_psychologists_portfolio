@@ -1,0 +1,532 @@
+---
+title: "Data on the Rocks: Touring U.S. Lighthouses"
+name: Verity Elliott
+output: html_document
+---
+
+Lighthouses are singular pieces of coastal infrastructure that serve a functional purpose - guiding mariners - but also embody geographic and historical narratives. The Wikipedia page “List of lighthouses in the United States” compiles standardized information on U.S. lighthouses including location (latitude/longitude), year established, tower height, range, and notes on status. Rather than manually copying entries or using a secondary dataset, we scrape the canonical list directly from Wikipedia. This ensures reproducibility and ties our analysis to a visible public source that encodes the selection and categorization decisions of the community that maintains the page.
+
+```{r load-packages, warning = FALSE, message=FALSE}
+# Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(httr)
+  library(ggrepel)
+  library(viridis)
+})
+```
+
+The lighthouse data are not stored in a single master table on Wikipedia. Instead, the page Lists of lighthouses in the United States serves as an index linking to individual state-level pages. Each state page contains one or more tables listing lighthouses and their attributes. To build a comprehensive dataset, we first retrieve the index page, extract all links to state-specific lighthouse pages, and then programmatically iterate over those links to collect their tables.
+
+```{r retrieve_data}
+# ---- 1. Read the index page (main lighthouse list page) ----
+index_url <- "https://en.wikipedia.org/wiki/List_of_lighthouses_in_the_United_States"
+
+index_page <- GET(
+  index_url,
+  user_agent("Mozilla/5.0 (R lighthouse data project)")
+) %>% read_html()
+
+# ---- 2. Extract links to state-level lighthouse pages ----
+state_links <- index_page %>%
+  html_elements("a") %>%
+  html_attr("href") %>%
+  na.omit() %>%
+  unique() %>%
+  # Only keep links starting with lighthouse list pattern
+  keep(~ str_detect(., "^/wiki/List_of_lighthouses_in_")) %>%
+  # Add base URL
+  paste0("https://en.wikipedia.org", .)
+
+# Remove main U.S. page and known non-state pages
+state_links <- state_links %>%
+  keep(~ !str_detect(.x, "List_of_lighthouses_in_the_United_States$") &
+         !str_detect(.x, "List_of_lighthouses_in_the_United_States_territories")) 
+
+length(state_links)  # Should be roughly 50+
+
+# ---- 3. Function to retrieve lighthouse tables from a single state page ----
+get_lighthouse_tables <- function(url) {
+  tryCatch({
+    page <- read_html(url)
+    
+    # Clean state name from URL
+    state_name <- url %>%
+      str_replace("https://en.wikipedia.org/wiki/List_of_lighthouses_in_", "") %>%
+      str_replace_all("_", " ") %>%
+      str_replace_all("\\s*\\(.*\\)", "") %>%  # remove parentheses
+      str_replace_all("%[0-9A-F]{2}", "") %>% # rough URL decoding
+      str_replace_all("#.*$", "") %>%         # remove fragments like #Illinois
+      str_trim()
+    
+    # Extract tables with class wikitable
+    tables <- page %>% html_elements("table.wikitable")  
+    tables <- map(tables, function(tab) {
+      df <- html_table(tab, fill = TRUE)
+      
+      # Only keep tables with a Name column
+      if (!any(str_detect(names(df), regex("name", ignore_case = TRUE)))) return(NULL)
+      
+      # Standardize column names
+      names(df) <- names(df) %>%
+        {ifelse(is.na(.) | . == "", paste0("V", seq_along(.)), .)} %>%
+        tolower() %>%
+        str_replace_all("\\s+", "_")
+      
+      # Add state column
+      df$state <- state_name
+      
+      # Extract numeric height from any column containing "height"
+      height_col <- grep("height", names(df), ignore.case = TRUE)
+      if (length(height_col) > 0) {
+        df$height <- df[[height_col[1]]]  # take first matching height column
+      } else {
+        df$height <- NA_character_
+      }
+      
+      df
+    })
+    
+    tables <- compact(tables)  # remove NULL tables
+    tables
+    
+  }, error = function(e) {
+    message("Failed to read ", url, ": ", e$message)
+    NULL
+  })
+}
+
+# ---- 4. Scrape all state pages with a short pause between requests ----
+all_tables <- map(state_links, ~{
+  Sys.sleep(0.5)  # polite delay
+  get_lighthouse_tables(.x)
+})
+
+# ---- 5. Flatten list of tables ----
+all_tables <- flatten(all_tables)
+
+# ---- 6. Standardize column names and convert all columns to character ----
+all_tables <- map(all_tables, ~{
+  df <- .
+  
+  colnames(df) <- colnames(df) %>%
+    {ifelse(is.na(.) | . == "", paste0("V", seq_along(.)), .)} %>%
+    tolower() %>%
+    str_replace_all("\\s+", "_")
+  
+  # Ensure essential columns exist
+  if(!"state" %in% colnames(df)) df$state <- NA_character_
+  if(!"name" %in% colnames(df)) df$name <- NA_character_
+  if(!"location" %in% colnames(df)) df$location <- NA_character_
+  if(!"height" %in% colnames(df)) df$height <- NA_character_
+  
+  colnames(df) <- make.unique(colnames(df), sep = "_dup_")
+  df %>% mutate(across(everything(), as.character))
+})
+
+# ---- 7. Combine into master dataframe ----
+lighthouses_all <- bind_rows(all_tables)
+
+# ---- 8. Clean and select relevant columns ----
+lighthouses_clean <- lighthouses_all %>%
+  fill(state, .direction = "down") %>%
+  mutate(
+    across(where(is.character), ~ str_squish(.) %>% str_replace_all("\n", " ")),
+    year_first_lit = str_extract(year_first_lit, "\\d{4}") %>% as.integer(),
+    height_ft = str_extract(height, "\\d+\\.?\\d*") %>% as.numeric()
+  ) %>%
+  filter(!is.na(name) & name != "") %>%
+  select(-height)  # keep numeric height_ft only
+
+# ---- 9. Sanity Checks ----
+dim(lighthouses_clean)
+head(lighthouses_clean, 10)
+```
+
+With lighthouse tables collected from all state-level pages, we now clean and standardize the combined dataset so it can be used for analysis and mapping. Because the tables vary slightly across states, we select only the most relevant columns - such as state, name, coordinates, year first lit, height, etc. - using flexible matching. We then fill down missing state values where necessary, clean text fields to remove extra whitespace and line breaks, and extract numeric values from the year and height columns. We also remove rows that do not correspond to actual lighthouses (such as repeated headers or notes) and drop original text-based columns once numeric versions have been created. The result is a consistent dataset ready for filtering, searching, and geographic visualization.
+
+```{r convert_data}
+lighthouses_clean <- lighthouses_all %>%
+  # ---- 1. Ensure necessary columns exist ----
+  mutate(
+    # Ensure height variants
+    height = if ("height" %in% colnames(.)) height else NA_character_,
+    height_ft = if ("height_ft" %in% colnames(.)) height_ft else NA_character_,
+    
+    # Ensure automated variants exist
+    automated = if ("automated" %in% colnames(.)) automated else NA_character_,
+    year_automated = if ("year_automated" %in% colnames(.)) year_automated else NA_character_
+  ) %>%
+  
+  # ---- 2. Select relevant columns plus potential variants ----
+  select(any_of(c(
+    "state",
+    "name",
+    "location",
+    "coordinates",
+    "year_first_lit",
+    "automated", "year_automated",
+    "current_lens",
+    "height", "height_ft"
+  ))) %>%
+  
+  # ---- 3. Fill down state values ----
+  fill(state, .direction = "down") %>%
+  
+  # ---- 4. Clean text fields ----
+  mutate(across(where(is.character), ~ str_squish(.) %>% str_replace_all("\n", " "))) %>%
+  
+  # ---- 5. Consolidate height columns to a single numeric column ----
+  mutate(
+    height = coalesce(height, height_ft),
+    height_ft = str_extract(height, "\\d+\\.?\\d*") %>% as.numeric()
+  ) %>%
+  
+  # ---- 6. Consolidate automated column safely ----
+  mutate(
+    automated = coalesce(automated, year_automated)
+  ) %>%
+  
+  # ---- 7. Remove rows without a lighthouse name ----
+  filter(!is.na(name) & name != "") %>%
+  
+  # ---- 8. Drop temporary or redundant columns ----
+  select(-c(height, year_automated)) %>%
+  
+  # ---- 9. Reorder columns exactly as desired ----
+  select(
+    state,
+    name,
+    location,
+    coordinates,
+    year_first_lit,
+    automated,
+    current_lens,
+    height_ft
+  )
+
+# ---- Sanity Checks ----
+# Check number of rows and columns
+dim(lighthouses_clean)
+
+# Preview first 10 rows of key columns
+key_cols <- c("name", "location", "coordinates", "year_first_lit",
+              "automated", "current_lens", "height_ft", "state")
+head(lighthouses_clean %>% select(any_of(key_cols)), 10)
+
+# Inspect structure
+glimpse(lighthouses_clean)
+```
+
+Many of the coordinates in the dataset are currently stored as crude strings, often in degrees with directional indicators (e.g., "42.9672°N 70.6231°W"). To make these usable for mapping and spatial analysis, we convert the coordinates into decimal degrees. This involves splitting the latitude and longitude, removing any directional symbols, and applying the correct sign based on whether the coordinate is north/south or east/west. After this transformation, the dataset will have numeric lat and lon columns, allowing us to plot lighthouse locations on maps or perform geographic filtering.
+
+```{r convert_coordinates}
+lighthouses_clean <- lighthouses_clean %>%
+  mutate(
+    # Remove parentheses/brackets and extra spaces
+    coords_clean = str_remove_all(coordinates, "\\(.*?\\)|\\[.*?\\]") %>% str_squish(),
+
+    # Extract lat/lon with decimal and hemisphere
+    lat_raw = str_extract(coords_clean, "[-]?\\d+\\.?\\d*°?\\s*[NS]"),
+    lon_raw = str_extract(coords_clean, "[-]?\\d+\\.?\\d*°?\\s*[EW]"),
+
+    # Convert to numeric
+    lat = as.numeric(str_remove_all(lat_raw, "[°NS]")),
+    lon = as.numeric(str_remove_all(lon_raw, "[°EW]")),
+
+    # Apply sign based on hemisphere
+    lat = ifelse(str_detect(lat_raw, "S"), -lat, lat),
+    lon = ifelse(str_detect(lon_raw, "W"), -lon, lon)
+  ) %>%
+  filter(!is.na(lat) & !is.na(lon))
+
+# ---- Sanity Check ----
+# Preview first 10 rows of lat/lon
+lighthouses_clean %>% select(name, state, lat, lon) %>% head(10)
+```
+
+### Lighthouse Lens: Explore the Data
+
+Once the lighthouse dataset has been cleaned and coordinates converted, it becomes useful to explore it dynamically. A simple way to do this is by defining a search function that allows filtering by one or more criteria such as state, name, age, or height. This enables quick querying of the dataset to answer questions like “Which lighthouses are taller than 150 feet?” or “Show all lighthouses built before 1850 in Massachusetts.” By wrapping these filters into a function, the dataset becomes interactive and easier to analyze or visualize on a map.
+
+```{r search_function}
+# Function to search/filter lighthouses
+search_lighthouses <- function(df,
+                               name_search = NULL,
+                               state_search = NULL,
+                               location_search = NULL,
+                               coordinates_search = NULL,
+                               min_year = NULL,
+                               max_year = NULL,
+                               automated_search = NULL,
+                               lens_search = NULL,
+                               min_height = NULL,
+                               max_height = NULL) {
+  
+  results <- df
+  
+  # Helper for safe text filtering
+  safe_text_filter <- function(column, value) {
+    str_detect(column, fixed(value, ignore_case = TRUE))
+  }
+  
+  # ---- Text filters ----
+  if (!is.null(name_search))       results <- results %>% filter(safe_text_filter(name, name_search))
+  if (!is.null(state_search))      results <- results %>% filter(safe_text_filter(state, state_search))
+  if (!is.null(location_search))   results <- results %>% filter(safe_text_filter(location, location_search))
+  if (!is.null(coordinates_search))results <- results %>% filter(safe_text_filter(coordinates, coordinates_search))
+  if (!is.null(automated_search))  results <- results %>% filter(safe_text_filter(automated, automated_search))
+  if (!is.null(lens_search))       results <- results %>% filter(safe_text_filter(current_lens, lens_search))
+  
+  # ---- Numeric filters ----
+  if (!is.null(min_year))   results <- results %>% filter(!is.na(year_first_lit) & year_first_lit >= min_year)
+  if (!is.null(max_year))   results <- results %>% filter(!is.na(year_first_lit) & year_first_lit <= max_year)
+  if (!is.null(min_height)) results <- results %>% filter(!is.na(height_ft) & height_ft >= min_height)
+  if (!is.null(max_height)) results <- results %>% filter(!is.na(height_ft) & height_ft <= max_height)
+  
+  # ---- Return results ----
+  if (nrow(results) == 0) {
+    message("No lighthouses found matching these criteria.")
+    return(NULL)
+  } else {
+    return(results)
+  }
+}
+
+# ---- Example Usage ---
+# All lighthouses taller than 150 ft
+search_lighthouses(lighthouses_clean, min_height = 150)
+
+# Built before 1850 in Massachusetts
+search_lighthouses(lighthouses_clean, state_search = "Massachusetts", max_year = 1849)
+
+# Lighthouses with Fresnel lenses
+search_lighthouses(lighthouses_clean, lens_search = "Fresnel")
+
+# Specific partial name
+search_lighthouses(lighthouses_clean, name_search = "Cape")
+
+# Multiple filters: Massachusetts, Fresnel lens, height > 100
+search_lighthouses(lighthouses_clean,
+                   state_search = "Massachusetts",
+                   lens_search = "Fresnel",
+                   min_height = 100)
+```
+
+### Coastal Chronicals: Charting Two Centuries of Light
+
+Mapping U.S. lighthouses by year of construction reveals both geographic and historical patterns. The oldest lighthouses are heavily clustered along the Northeast coast, reflecting early colonial settlement, dense shipping activity, and the establishment of major ports such as Boston and New York. Mid-19th-century constructions spread southward along the Atlantic coast, while the West Coast shows a later surge in the late 19th and early 20th centuries, consistent with westward expansion and the growth of Pacific maritime commerce.
+
+```{r map_lighthouses_year, fig.width=10, fig.height=7}
+# 1. Clean year: take last 4-digit number as 'Current' tower, handle missing years
+lighthouse_map_data <- lighthouses_clean %>%
+  mutate(
+    year_numbers = str_extract_all(year_first_lit, "\\d{4}"),
+    year_num = map_dbl(year_numbers,
+                   ~ if(length(.x) == 0) NA_real_
+                   else as.numeric(min(.x)))
+  ) %>%
+  # Keep only rows with valid year and coordinates
+  filter(!is.na(lat) & !is.na(lon) & !is.na(year_num)) %>%
+  
+  # 2. Create historical era bins for stronger visual contrast
+  mutate(
+    era = case_when(
+      year_num < 1800              ~ "Pre-1800",
+      year_num >= 1800 & year_num < 1850 ~ "1800–1849",
+      year_num >= 1850 & year_num < 1900 ~ "1850–1899",
+      year_num >= 1900 & year_num < 1950 ~ "1900–1949",
+      year_num >= 1950              ~ "1950+"
+    ),
+    era = factor(era, levels = c("Pre-1800","1800–1849","1850–1899","1900–1949","1950+"))
+  ) %>%
+  
+  # 3. Reorder so earliest era is drawn last (appears on top)
+  arrange(factor(era, levels = c("1800–1849","1850–1899","1900–1949","1950+","Pre-1800")))
+
+# ---- 4. Get U.S. map data ----
+us_map <- ggplot2::map_data("state")
+
+# 5. Full Contiguous U.S. map: filter to contiguous bounds
+lighthouse_contiguous <- lighthouse_map_data %>%
+  filter(lon >= -125 & lon <= -66,
+         lat >= 24  & lat <= 50)
+
+# 6. ---- Display ----
+theme_set(theme_minimal(base_size = 14))  # consistent theme
+
+ggplot() +
+  # U.S. states as base map
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group),
+               fill = "gray92", color = "white", linewidth = 0.2) +
+  
+  # Lighthouse points (solid circles, no outline)
+  geom_point(data = lighthouse_contiguous,
+             aes(x = lon, y = lat, color = era),
+             size = 3.2, alpha = 0.9) +
+  
+  # Discrete color scale emphasizes early historical clusters
+  scale_color_viridis_d(option = "plasma", direction = -1, name = "Era Built") +
+  
+  labs(title = "U.S. Lighthouses by Era of Construction (Contiguous States)",
+       x = "Longitude", y = "Latitude") +
+  
+  coord_quickmap(xlim = c(-125, -66), ylim = c(24, 50)) +
+  
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(face = "bold", size = 12),
+    axis.title.y = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 12),
+    legend.text = element_text(size = 11)
+  )
+
+# 7. Northeast / Mid-Atlantic zoom: focus on oldest lighthouses
+lighthouse_northeast <- lighthouse_map_data %>%
+  filter(lon >= -80 & lon <= -66,   # Roughly from mid-Atlantic to Maine
+         lat >= 36 & lat <= 45)
+
+# 8. ---- Display ----
+ggplot() +
+  # U.S. states as base map
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group),
+               fill = "gray92", color = "white", linewidth = 0.2) +
+  
+  # Lighthouse points (same ordering ensures Pre-1800 visible)
+  geom_point(data = lighthouse_northeast,
+             aes(x = lon, y = lat, color = era),
+             size = 3.5, alpha = 0.95) +
+  
+  # Same era color scale for direct comparison
+  scale_color_viridis_d(option = "plasma", direction = -1, name = "Era Built") +
+  
+  labs(title = "Northeast U.S. Lighthouses by Era of Construction",
+       x = "Longitude", y = "Latitude") +
+  
+  coord_quickmap(xlim = c(-80, -66), ylim = c(36, 45)) +
+  
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(face = "bold", size = 12),
+    axis.title.y = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 12),
+    legend.text = element_text(size = 11)
+  )
+```
+
+### Boxplots Ahoy: Regional Construction Trends
+
+Faceted boxplots of construction year by state reveal regional variation in lighthouse development. Northeastern states such as Massachusetts, New York, and Rhode Island show early construction peaks in the 18th and early 19th centuries, reflecting dense maritime commerce and colonial-era port activity, while Maine and Delaware are slightly later. Southern states and those along the Gulf Coast generally have later median construction years. West Coast states, including California, Oregon, and Washington, have their earliest lighthouses built in the mid-to-late 19th century, reflecting later settlement and port development.
+
+```{r map_lighthouses_year_alternative, fig.width=10, fig.height=7}
+# ---- 1. Choose states manually ----
+selected_states <- c("Massachusetts", "Rhode Island", "Maine", "Delaware", "New York", "North Carolina", "Florida", "California", "Oregon", "Washington")
+
+# ---- 2. Prepare data ----
+lighthouse_boxplot_selected <- lighthouses_clean %>%
+  filter(state %in% selected_states) %>%
+  mutate(
+    year_first_lit = as.numeric(year_first_lit),
+    
+    # categorize by era
+    era = case_when(
+      year_first_lit < 1800                          ~ "Pre-1800",
+      year_first_lit >= 1800 & year_first_lit < 1850 ~ "1800–1849",
+      year_first_lit >= 1850 & year_first_lit < 1900 ~ "1850–1899",
+      year_first_lit >= 1900 & year_first_lit < 1950 ~ "1900–1949",
+      year_first_lit >= 1950                         ~ "1950+"
+    ),
+    era = factor(era, levels = c("Pre-1800","1800–1849","1850–1899","1900–1949","1950+"))
+  ) %>%
+  filter(!is.na(era)) %>%
+  
+  # Reorder states by median construction year
+  group_by(state) %>%
+  mutate(median_year = median(year_first_lit, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(state = factor(state, levels = unique(state[order(median_year)])))
+
+# ---- 3. Plot ----
+ggplot(lighthouse_boxplot_selected, aes(x = state, y = year_first_lit)) +
+  geom_boxplot(outlier.shape = NA, fill = "gray90", color = "black", alpha = 0.6) +
+  geom_jitter(aes(color = era), width = 0.2, size = 2.5, alpha = 0.85) +
+  scale_color_viridis_d(option = "plasma", direction = -1, name = "Era Built") +
+  coord_flip() +
+  labs(
+    title = "Distribution of Lighthouse Construction Years for Selected States",
+    x = "State",
+    y = "Year Built"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    axis.title.x = element_text(face = "bold", size = 12),
+    axis.title.y = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 12),
+    legend.text = element_text(size = 11)
+  )
+```
+
+### Towers Through Time: How Lighthouses Grew
+
+Plotting lighthouse height against year of construction reveals patterns in architectural and technological evolution, alongside wide variation in tower sizes. Heights show no consistent upward trend; both historical and modern outliers exist. Some early lighthouses were exceptionally tall to serve major ports, such as Cape Mendocino Light (California, 422 ft, 1868) with its first‑order Fresnel lens for maximum visibility. Conversely, some smaller or modern lighthouses, like Craighill Channel Upper Range Front Light (Maryland, 15 ft, 1886), were designed for precise harbor guidance. Tower height reflected functional needs, geographic context, and technological advances: better materials, improved lighting systems, and advanced lenses allowed taller towers, while superior optics sometimes reduced the need for large structures.
+
+```{r lighthouse_height_vs_year, fig.width=10, fig.height=7}
+# ---- 1. Prepare data ----
+lighthouse_height_data <- lighthouses_clean %>%
+  # Convert year_first_lit to numeric; non-numeric values become NA
+  mutate(year_first_lit = as.numeric(year_first_lit)) %>%
+  filter(!is.na(height_ft) & !is.na(year_first_lit)) %>%
+  mutate(
+    era = case_when(
+      year_first_lit < 1800                ~ "Pre-1800",
+      year_first_lit >= 1800 & year_first_lit < 1850 ~ "1800–1849",
+      year_first_lit >= 1850 & year_first_lit < 1900 ~ "1850–1899",
+      year_first_lit >= 1900 & year_first_lit < 1950 ~ "1900–1949",
+      year_first_lit >= 1950               ~ "1950+"
+    ),
+    era = factor(era, levels = c("Pre-1800","1800–1849","1850–1899","1900–1949","1950+"))
+  ) %>%
+  # Draw earliest era last so bright yellow points appear on top
+  arrange(desc(era == "Pre-1800"))
+
+# ---- 2. Display ----
+ggplot(lighthouse_height_data, aes(x = year_first_lit, y = height_ft, color = era)) +
+  geom_point(alpha = 0.8, size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +  # linear regression
+  # geom_smooth(method = "loess", se = FALSE, color = "black", linetype = "dashed") + # optional loess instead
+
+  scale_color_viridis_d(option = "plasma", direction = -1, name = "Era Built") +
+
+  # Add small padding to prevent clipping
+  scale_x_continuous(
+    limits = c(min(lighthouse_height_data$year_first_lit) - 5,
+               max(lighthouse_height_data$year_first_lit) + 5)
+  ) +
+  scale_y_continuous(
+    limits = c(0, max(lighthouse_height_data$height_ft) + 20)
+  ) +
+
+  labs(
+    title = "Lighthouse Height vs. Year of Construction",
+    x = "Year Built",
+    y = "Height (ft)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 12),
+    legend.text = element_text(size = 11)
+  )
+```
+
+### Guided by Light: Technology Meets Architecture
+
+Lens type and automation status are inconsistently reported, limiting detailed quantitative analysis, but the dataset still illustrates historical and technological patterns. Early lighthouses, particularly those from the 18th and early 19th centuries, often used classical Fresnel lenses—such as the first‑order rotating lenses installed in major ports—and were manually operated, reflecting the engineering standards and operational norms of the time. These towers were sited for maximum visibility in busy shipping areas or at heritage locations. Across the dataset, these historical designs coexist with later adaptations, showing how functional requirements, construction methods, and geographic context influenced lighthouse design.
+
+Newer lighthouses increasingly feature automated systems and modern optics. Many modern lenses, such as the VRB‑25, are Fresnel-derived but smaller, lighter, and designed for efficiency rather than sheer range. Automation reduced the need for on-site personnel and allowed construction in smaller or remote locations. The gradual adoption of classical Fresnel lenses in the 19th century and their modern derivatives demonstrates a clear technological evolution that improved the reach and efficiency of coastal lights. Considering age, height, and lens type together, we can trace how design choices, operational practices, and innovations shaped U.S. lighthouse construction over more than two centuries.

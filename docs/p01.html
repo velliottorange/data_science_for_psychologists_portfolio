@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>92 Is Half of 99: Ordinal Progress and the Geometry of Grind</title>
+
+<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Portfolio</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="p01.html">Portfolio 1</a>
+</li>
+<li>
+  <a href="p02.html">Portfolio 2</a>
+</li>
+<li>
+  <a href="p03.html">Portfolio 3</a>
+</li>
+<li>
+  <a href="p04.html">Portfolio 4</a>
+</li>
+<li>
+  <a href="p05.html">Portfolio 5</a>
+</li>
+<li>
+  <a href="p06.html">Portfolio 6</a>
+</li>
+<li>
+  <a href="p07.html">Portfolio 7</a>
+</li>
+<li>
+  <a href="p08.html">Portfolio 8</a>
+</li>
+<li>
+  <a href="p09.html">Portfolio 9</a>
+</li>
+<li>
+  <a href="p10.html">Portfolio 10</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">92 Is Half of 99: Ordinal Progress and the
+Geometry of Grind</h1>
+
+</div>
+
+
+<p>In the online game RuneScape, players often make a curious claim: “92
+is half of 99.” At first glance, this seems impossible. Level 92 sits
+near the very end of the 1-to-99 sequence - clearly not the halfway
+point. Yet if we measure progress by cumulative experience points (XP),
+level 92 really is almost halfway to 99.</p>
+<p>This mismatch between a level’s position and the total effort
+required is the central puzzle of this project. Levels increase one by
+one, but the XP needed grows exponentially. Our goal is to explore this
+structure mathematically and see how the story changes when we transform
+the scale.</p>
+<pre class="r"><code># Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(ggplot2)
+  library(dplyr)
+  library(scales)
+  library(tidyr)
+})</code></pre>
+<p>The XP table is publicly available on the RuneScape Wiki. Instead of
+entering values manually or relying on secondary sources (like a noob),
+we pull the data directly from the site. This approach keeps the
+analysis fully reproducible and ensures the numbers match the official
+progression used in the game.</p>
+<pre class="r"><code># 1. Read the HTML from the RuneScape Wiki XP table page
+url &lt;- &quot;https://runescape.wiki/w/Experience/Table&quot;
+
+# 2. Extract all tables from the page
+page &lt;- read_html(url)
+tables &lt;- page %&gt;% html_table(fill = TRUE)
+
+# 3. Select the first table, which contains levels 1-99
+xp_raw &lt;- tables[[1]]</code></pre>
+<p>The page contains several tables, but the one we need lists, for each
+level, both the total cumulative XP and the XP required to reach the
+next level. We extract these columns and convert them into numeric
+values, ensuring the data is clean and ready for analysis.</p>
+<pre class="r"><code># 4. Remove any empty spacer columns (wiki formatting artifacts)
+xp_raw &lt;- xp_raw[, names(xp_raw) != &quot;&quot;]
+
+# 5. Make column names unique so tidyverse functions can operate safely
+names(xp_raw) &lt;- make.names(names(xp_raw), unique = TRUE)
+
+# 6. Force all columns to character to avoid type conflicts during pivot
+xp_raw &lt;- xp_raw %&gt;%
+  mutate(across(everything(), as.character))
+
+# 7. Reshape from wide (side-by-side blocks) to long (single vertical progression)
+#    - Each block is 3 columns: Level, XP, Difference
+#    - Stack blocks vertically instead of using pivot_longer to preserve correct order
+blocks &lt;- seq(1, ncol(xp_raw), by = 3)  # indices of first column in each block
+xp_list &lt;- lapply(blocks, function(i) {
+  tibble(
+    level = as.numeric(xp_raw[[i]]),
+    cumulative_xp = as.numeric(gsub(&quot;[^0-9]&quot;, &quot;&quot;, xp_raw[[i+1]])),
+    xp_to_next = as.numeric(gsub(&quot;[^0-9]&quot;, &quot;&quot;, xp_raw[[i+2]]))
+  )
+})</code></pre>
+<pre><code>## Warning in eval_tidy(xs[[j]], mask): NAs introduced by coercion</code></pre>
+<pre class="r"><code>xp_table &lt;- bind_rows(xp_list) %&gt;%
+  
+  # 8. Clean numeric formatting:
+  #    - Already converted above, so this ensures proper numeric type
+  mutate(
+    level = as.numeric(level),
+    cumulative_xp = as.numeric(cumulative_xp),
+    xp_to_next = as.numeric(xp_to_next)
+  ) %&gt;%
+  
+  # 9. Remove any NA rows (header artifacts)
+  filter(!is.na(level)) %&gt;%
+  
+  # 10. Sort by level for proper order
+  arrange(level)
+
+# ---- Sanity Checks ----
+range(xp_table$level)   # Expect 1 99</code></pre>
+<pre><code>## [1]  1 99</code></pre>
+<pre class="r"><code>nrow(xp_table)          # Expect 99</code></pre>
+<pre><code>## [1] 99</code></pre>
+<pre class="r"><code># ---- Display ----
+# Convert to a base data frame and format numbers for readability
+as.data.frame(
+  xp_table[90:94, ] %&gt;%
+    mutate(
+      cumulative_xp = format(cumulative_xp, big.mark = &quot;,&quot;),
+      xp_to_next = format(xp_to_next, big.mark = &quot;,&quot;)
+    )
+)</code></pre>
+<pre><code>##   level cumulative_xp xp_to_next
+## 1    90     5,346,332    504,037
+## 2    91     5,902,831    556,499
+## 3    92     6,517,253    614,422
+## 4    93     7,195,629    678,376
+## 5    94     7,944,614    748,985</code></pre>
+<pre class="r"><code># Create proportional columns for plotting
+xp_percent &lt;- xp_table %&gt;%
+  mutate(
+    percent_levels = level / max(level),
+    percent_xp = cumulative_xp / max(cumulative_xp)
+  )</code></pre>
+<p>At this point, our dataset is simple and complete. We have three key
+pieces of information: the level itself, the total cumulative XP
+required to reach that level, and the XP needed to advance to the next
+level. Because the data is clean, any patterns or surprises we uncover
+from here on out come from the shape of the progression itself — not
+from messy inputs.</p>
+<div id="the-long-climb-total-xp-from-1-to-99" class="section level3">
+<h3>The Long Climb: Total XP from 1 to 99</h3>
+<p>We start with the most straightforward visualization: plotting
+cumulative XP against level. This shows each level in order along the
+horizontal axis while illustrating how much total effort accumulates as
+players progress.</p>
+<pre class="r"><code># ---- Milestones with XP values ----
+milestones &lt;- xp_table %&gt;%
+  filter(level %in% c(92, 99)) %&gt;%
+  mutate(label = as.character(level),
+         color = c(&quot;indianred1&quot;, &quot;steelblue&quot;))
+
+# ---- Display ----
+xp_table %&gt;%
+  filter(level &lt;= 99) %&gt;%
+  ggplot(aes(x = level, y = cumulative_xp)) +
+  
+  # Main XP curve
+  geom_line(color = &quot;darkseagreen3&quot;, size = 1.5) +
+  
+  # Milestone points
+  geom_point(data = milestones,
+             aes(x = level, y = cumulative_xp, color = label),
+             size = 4) +
+  
+  # Y-axis formatting
+  scale_y_continuous(labels = comma, breaks = scales::pretty_breaks(n = 6), expand = expansion(mult = c(0, 0.1))) +
+  
+  # Colors for milestones
+  scale_color_manual(values = setNames(milestones$color, milestones$label)) +
+  
+  # Titles
+  labs(
+    title = &quot;Cumulative XP Across Levels 1–99&quot;,
+    x = &quot;Level&quot;,
+    y = &quot;Cumulative XP&quot;,
+    color = NULL   # removes legend title
+  ) +
+  
+  # Theme
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 20),
+    axis.title = element_text(face = &quot;bold&quot;),
+    axis.text = element_text(size = 12, color = &quot;gray20&quot;),
+    panel.grid.major = element_line(color = &quot;gray90&quot;),
+    panel.grid.minor = element_blank(),
+    legend.position = &quot;top&quot;
+  )</code></pre>
+<pre><code>## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+## ℹ Please use `linewidth` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.</code></pre>
+<p><img src="p01_files/figure-html/cumulative_XP_99-1.png" width="672" /></p>
+<p>The curve is immediately striking. Early levels require only a small
+fraction of the total XP, while the later levels account for most of the
+effort. Even though levels increase one by one along the horizontal
+axis, the cumulative XP rises much faster toward the end - a visual hint
+at why level 92 can be “halfway” to 99 in terms of XP.</p>
+</div>
+<div id="the-halfway-illusion-how-xp-deceives" class="section level3">
+<h3>The Halfway Illusion: How XP Deceives</h3>
+<p>To make the difference between level numbers and total effort
+clearer, we rescale both axes to show proportions of completion. This
+removes units and focuses attention on how far players have actually
+progressed.</p>
+<pre class="r"><code># ---- Milestones with XP values ----
+milestones &lt;- xp_percent %&gt;%
+  filter(level %in% c(92, 99)) %&gt;%
+  mutate(label = as.character(level),
+         color = c(&quot;indianred1&quot;, &quot;steelblue&quot;))
+
+# ---- Display ----
+xp_percent %&gt;%
+  filter(level &lt;= 99) %&gt;%
+  ggplot(aes(x = percent_levels, y = percent_xp)) +
+  
+  # Shaded area between linear reference and actual XP curve
+  geom_ribbon(aes(ymin = percent_levels, ymax = percent_xp),
+              fill = &quot;gray70&quot;, alpha = 0.15) +
+  
+  # Main XP curve
+  geom_line(color = &quot;darkseagreen3&quot;, size = 1.5) +
+  
+  # Linear reference diagonal
+  geom_abline(slope = 1, intercept = 0, linetype = &quot;dotted&quot;, color = &quot;gray50&quot;, size = 1) +
+  
+  # Milestone points
+  geom_point(data = milestones,
+             aes(x = percent_levels, y = percent_xp, color = label),
+             size = 4) +
+  
+  # Colors for milestones
+  scale_color_manual(values = setNames(milestones$color, milestones$label)) +
+  
+  # Axes formatting
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1),
+                     expand = expansion(mult = c(0,0.02))) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     expand = expansion(mult = c(0,0.02))) +
+  
+  # Titles
+  labs(
+    title = &quot;Relative Progress: Levels vs. XP&quot;,
+    x = &quot;Proportion of Levels Completed&quot;,
+    y = &quot;Proportion of Total XP&quot;,
+    color = NULL
+  ) +
+  
+  # Theme
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 20),
+    axis.title = element_text(face = &quot;bold&quot;),
+    axis.text = element_text(size = 12, color = &quot;gray20&quot;),
+    panel.grid.major = element_line(color = &quot;gray90&quot;),
+    panel.grid.minor = element_blank(),
+    legend.position = &quot;top&quot;
+  )</code></pre>
+<p><img src="p01_files/figure-html/proportional_transformation-1.png" width="672" /></p>
+<p>The dotted diagonal represents what progress would look like under a
+linear accumulation model: halfway through the levels would correspond
+to halfway through the XP. Instead, the observed curve hugs the lower
+boundary for most of the journey. Only near the final stretch does
+cumulative effort rapidly converge with ordinal completion.</p>
+<p>The point corresponding to level 92 sits near 50% of total XP while
+occupying over 90% of the ordinal scale. The gap between the curve and
+the diagonal represents the structural divergence between two different
+notions of “progress.” Players experience this as “grind:” the early
+levels pass quickly, while late levels demand disproportionate time
+investment - so much so that “maxing” all skills in RuneScape can take
+anywhere from around 1,700 to 3,700 hours (or more)!</p>
+</div>
+<div id="each-step-steeper-than-the-last" class="section level3">
+<h3>Each Step Steeper Than the Last</h3>
+<p>Cumulative curves can obscure the cost of individual transitions. To
+examine the local structure of the progression, we now plot the
+incremental XP required to move from one level to the next.</p>
+<p>We then translate XP into estimated hours per level based on
+optimistic high-efficiency XP rates for each of the four main skill
+types in the game: Combat, Artisan, Gathering, and Support. These rates
+approximate near-optimal training conditions and therefore represent a
+lower bound on the time required; typical progression is often slower.
+These types bundle skills with similar progression characteristics, and
+the resulting lines show how grind accumulates differently depending on
+the kind of activity.</p>
+<pre class="r"><code># 1. Skill XP/hour data
+skill_xp_rates &lt;- tibble(
+  skill = c(&quot;Agility&quot;, &quot;Archaeology&quot;, &quot;Melee&quot;, &quot;Construction&quot;, &quot;Cooking&quot;, &quot;Crafting&quot;,
+            &quot;Divination&quot;, &quot;Dungeoneering&quot;, &quot;Farming&quot;, &quot;Firemaking&quot;, &quot;Fishing&quot;, &quot;Fletching&quot;,
+            &quot;Herblore&quot;, &quot;Hunter&quot;, &quot;Magic&quot;, &quot;Mining&quot;, &quot;Necromancy&quot;, &quot;Prayer&quot;, &quot;Ranged&quot;,
+            &quot;Runecrafting&quot;, &quot;Slayer&quot;, &quot;Smithing&quot;, &quot;Summoning&quot;, &quot;Thieving&quot;, &quot;Woodcutting&quot;),
+  xp_per_hour = c(100000, 800000, 800000, 850000, 450000, 600000,
+                  550000, 600000, 1000000, 770000, 285000, 1500000,
+                  8000000, 350000, 800000, 150000, 2000000, 3100000, 800000,
+                  350000, 600000, 1800000, 4600000, 540000, 770000)
+)
+
+# 2. Map each skill to its type
+skill_types &lt;- tibble(
+  skill = c(&quot;Attack&quot;,&quot;Constitution&quot;,&quot;Defence&quot;,&quot;Magic&quot;,&quot;Necromancy&quot;,&quot;Prayer&quot;,&quot;Ranged&quot;,&quot;Strength&quot;,&quot;Summoning&quot;,
+            &quot;Construction&quot;,&quot;Cooking&quot;,&quot;Crafting&quot;,&quot;Firemaking&quot;,&quot;Fletching&quot;,&quot;Herblore&quot;,&quot;Runecrafting&quot;,&quot;Smithing&quot;,
+            &quot;Archaeology&quot;,&quot;Divination&quot;,&quot;Farming&quot;,&quot;Fishing&quot;,&quot;Hunter&quot;,&quot;Mining&quot;,&quot;Woodcutting&quot;,
+            &quot;Agility&quot;,&quot;Dungeoneering&quot;,&quot;Slayer&quot;,&quot;Thieving&quot;),
+  type = c(
+    rep(&quot;Combat&quot;, 9),
+    rep(&quot;Artisan&quot;, 8),
+    rep(&quot;Gathering&quot;, 7),
+    rep(&quot;Support&quot;, 4)
+  )
+)
+
+# 3. Keep only skills in the four types
+skill_xp_rates &lt;- skill_xp_rates %&gt;%
+  inner_join(skill_types, by = &quot;skill&quot;)
+
+# 4. Average XP/hr per type
+type_xp_rates &lt;- skill_xp_rates %&gt;%
+  group_by(type) %&gt;%
+  summarise(xp_per_hour = mean(xp_per_hour, na.rm = TRUE)) %&gt;%
+  ungroup()
+
+# 5. Merge with xp_table to get hours per level
+xp_type_hours &lt;- xp_table %&gt;%
+  filter(level &lt;= 99) %&gt;%
+  crossing(type_xp_rates) %&gt;%
+  mutate(hours_to_next = xp_to_next / xp_per_hour)
+
+# 6. Define distinct line colors for skill types
+type_colors &lt;- c(
+  &quot;Combat&quot; = &quot;lightsalmon1&quot;,
+  &quot;Artisan&quot; = &quot;darkseagreen2&quot;,
+  &quot;Gathering&quot; = &quot;lightsteelblue2&quot;,
+  &quot;Support&quot; = &quot;plum2&quot;
+)
+
+# ---- Display ----
+ggplot(xp_type_hours, aes(x = level, y = hours_to_next, color = type)) +
+  
+  # Lines per skill type
+  geom_line(size = 1.5) +
+  
+  # Line colors
+  scale_color_manual(values = type_colors) +
+  
+  # Y-axis formatting
+  scale_y_continuous(labels = comma, breaks = pretty_breaks(n = 6),
+                     expand = expansion(mult = c(0, 0.1))) +
+  
+  # Titles
+  labs(
+    title = &quot;Estimated Hours per Level by Skill Type&quot;,
+    x = &quot;Level&quot;,
+    y = &quot;Hours to Next Level&quot;,
+    color = NULL   # removes legend title
+  ) +
+  
+  # Theme
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 20),
+    plot.subtitle = element_text(hjust = 0.5, face = &quot;italic&quot;, size = 14),
+    axis.title = element_text(face = &quot;bold&quot;),
+    axis.text = element_text(size = 12, color = &quot;gray20&quot;),
+    panel.grid.major = element_line(color = &quot;gray90&quot;),
+    panel.grid.minor = element_blank(),
+    legend.position = &quot;top&quot;
+  )</code></pre>
+<p><img src="p01_files/figure-html/XP_per_hour-1.png" width="672" /></p>
+<p>On a linear scale, the late-game requirements appear explosive. The
+incremental cost per level grows rapidly, giving the impression of
+acceleration. However, exponential functions often appear erratic when
+plotted linearly. To better understand the functional form, we apply a
+logarithmic transformation to the vertical axis.</p>
+<pre class="r"><code># ---- XP per level (log scale) ----
+xp_table %&gt;%
+  # Exclude level 1 because xp_to_next = 0, which cannot be plotted on log10 scale
+  filter(level &gt; 1 &amp; level &lt;= 99) %&gt;%
+  ggplot(aes(x = level, y = xp_to_next)) +
+  
+  # Main XP curve
+  geom_line(color = &quot;darkseagreen3&quot;, size = 1.5) +
+  
+  # Log scale (automatically skips NAs)
+  scale_y_log10(labels = comma) +
+  
+  # Titles
+  labs(
+    title = &quot;XP Required Per Level (Log Scale)&quot;,
+    x = &quot;Level&quot;,
+    y = &quot;XP to Next Level&quot;
+  ) +
+  
+  # Theme
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 20),
+    axis.title = element_text(face = &quot;bold&quot;),
+    axis.text = element_text(size = 12, color = &quot;gray20&quot;),
+    panel.grid.major = element_line(color = &quot;gray90&quot;),
+    panel.grid.minor = element_blank()
+  )</code></pre>
+<p><img src="p01_files/figure-html/XP_per_level_log-1.png" width="672" /></p>
+<p>On a logarithmic scale, the curve straightens, revealing that what
+once looked like chaotic acceleration is actually steady exponential
+growth. The data itself hasn’t changed - only our perspective has. This
+illustrates a central theme of exploratory analysis: the apparent
+structure of a dataset often depends on the scale from which we view
+it.</p>
+</div>
+<div id="when-progress-becomes-horizontal" class="section level3">
+<h3>When Progress Becomes Horizontal</h3>
+<p>Finally, we invert the conventional perspective by plotting level
+against cumulative XP proportion. This is a type of reparameterization,
+meaning we change the way the plot is scaled so that the horizontal axis
+no longer represents level but cumulative progress.</p>
+<pre class="r"><code># ---- Level vs. cumulative XP proportion ----
+ggplot(xp_percent, aes(x = percent_xp, y = level)) +
+  
+  # Main line
+  geom_line(color = &quot;darkseagreen3&quot;, size = 1.5) +
+  
+  # Axis expansions for breathing room
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1),
+                     expand = expansion(mult = c(0, 0.02))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  
+  # Titles
+  labs(
+    title = &quot;Level as a Function of Cumulative XP Proportion&quot;,
+    x = &quot;Proportion of Total XP&quot;,
+    y = &quot;Level&quot;
+  ) +
+  
+  # Theme
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 20),
+    axis.title = element_text(face = &quot;bold&quot;),
+    axis.text = element_text(size = 12, color = &quot;gray20&quot;),
+    panel.grid.major = element_line(color = &quot;gray90&quot;),
+    panel.grid.minor = element_blank()
+  )</code></pre>
+<p><img src="p01_files/figure-html/cumulative_XP_proportion-1.png" width="672" /></p>
+<p>Under this reparameterization, the early levels appear squeezed
+together on the left, while the late levels spread out toward the right.
+What looked uniform on the original level axis now reveals the uneven
+pace of progress: most of the journey is quick, but the final levels
+demand much more. By plotting cumulative XP proportion on the horizontal
+axis, the curve’s true shape - and the real “distance” of the grind -
+becomes clear.</p>
+</div>
+<div id="lessons-from-the-xp-curve" class="section level3">
+<h3>Lessons from the XP Curve</h3>
+<p>The RuneScape leveling system progresses in simple steps, but the
+experience required grows exponentially. This creates a persistent
+mismatch: numbers that look close together often represent vastly
+different amounts of effort.</p>
+<p>By looking at the system in different ways - cumulatively,
+proportionally, logarithmically, over time, or with warped axes - the
+same structure reveals different patterns. Saying “level 92 is half of
+99” isn’t a paradox; it’s just how exponential growth appears when we
+read it on a linear scale.</p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

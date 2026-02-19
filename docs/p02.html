@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Data on the Rocks: Touring U.S. Lighthouses</title>
+
+<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Portfolio</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="p01.html">Portfolio 1</a>
+</li>
+<li>
+  <a href="p02.html">Portfolio 2</a>
+</li>
+<li>
+  <a href="p03.html">Portfolio 3</a>
+</li>
+<li>
+  <a href="p04.html">Portfolio 4</a>
+</li>
+<li>
+  <a href="p05.html">Portfolio 5</a>
+</li>
+<li>
+  <a href="p06.html">Portfolio 6</a>
+</li>
+<li>
+  <a href="p07.html">Portfolio 7</a>
+</li>
+<li>
+  <a href="p08.html">Portfolio 8</a>
+</li>
+<li>
+  <a href="p09.html">Portfolio 9</a>
+</li>
+<li>
+  <a href="p10.html">Portfolio 10</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Data on the Rocks: Touring U.S.
+Lighthouses</h1>
+
+</div>
+
+
+<p>Lighthouses are singular pieces of coastal infrastructure that serve
+a functional purpose - guiding mariners - but also embody geographic and
+historical narratives. The Wikipedia page “List of lighthouses in the
+United States” compiles standardized information on U.S. lighthouses
+including location (latitude/longitude), year established, tower height,
+range, and notes on status. Rather than manually copying entries or
+using a secondary dataset, we scrape the canonical list directly from
+Wikipedia. This ensures reproducibility and ties our analysis to a
+visible public source that encodes the selection and categorization
+decisions of the community that maintains the page.</p>
+<pre class="r"><code># Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(httr)
+  library(ggrepel)
+  library(viridis)
+})</code></pre>
+<p>The lighthouse data are not stored in a single master table on
+Wikipedia. Instead, the page Lists of lighthouses in the United States
+serves as an index linking to individual state-level pages. Each state
+page contains one or more tables listing lighthouses and their
+attributes. To build a comprehensive dataset, we first retrieve the
+index page, extract all links to state-specific lighthouse pages, and
+then programmatically iterate over those links to collect their
+tables.</p>
+<pre class="r"><code># ---- 1. Read the index page (main lighthouse list page) ----
+index_url &lt;- &quot;https://en.wikipedia.org/wiki/List_of_lighthouses_in_the_United_States&quot;
+
+index_page &lt;- GET(
+  index_url,
+  user_agent(&quot;Mozilla/5.0 (R lighthouse data project)&quot;)
+) %&gt;% read_html()
+
+# ---- 2. Extract links to state-level lighthouse pages ----
+state_links &lt;- index_page %&gt;%
+  html_elements(&quot;a&quot;) %&gt;%
+  html_attr(&quot;href&quot;) %&gt;%
+  na.omit() %&gt;%
+  unique() %&gt;%
+  # Only keep links starting with lighthouse list pattern
+  keep(~ str_detect(., &quot;^/wiki/List_of_lighthouses_in_&quot;)) %&gt;%
+  # Add base URL
+  paste0(&quot;https://en.wikipedia.org&quot;, .)
+
+# Remove main U.S. page and known non-state pages
+state_links &lt;- state_links %&gt;%
+  keep(~ !str_detect(.x, &quot;List_of_lighthouses_in_the_United_States$&quot;) &amp;
+         !str_detect(.x, &quot;List_of_lighthouses_in_the_United_States_territories&quot;)) 
+
+length(state_links)  # Should be roughly 50+</code></pre>
+<pre><code>## [1] 76</code></pre>
+<pre class="r"><code># ---- 3. Function to retrieve lighthouse tables from a single state page ----
+get_lighthouse_tables &lt;- function(url) {
+  tryCatch({
+    page &lt;- read_html(url)
+    
+    # Clean state name from URL
+    state_name &lt;- url %&gt;%
+      str_replace(&quot;https://en.wikipedia.org/wiki/List_of_lighthouses_in_&quot;, &quot;&quot;) %&gt;%
+      str_replace_all(&quot;_&quot;, &quot; &quot;) %&gt;%
+      str_replace_all(&quot;\\s*\\(.*\\)&quot;, &quot;&quot;) %&gt;%  # remove parentheses
+      str_replace_all(&quot;%[0-9A-F]{2}&quot;, &quot;&quot;) %&gt;% # rough URL decoding
+      str_replace_all(&quot;#.*$&quot;, &quot;&quot;) %&gt;%         # remove fragments like #Illinois
+      str_trim()
+    
+    # Extract tables with class wikitable
+    tables &lt;- page %&gt;% html_elements(&quot;table.wikitable&quot;)  
+    tables &lt;- map(tables, function(tab) {
+      df &lt;- html_table(tab, fill = TRUE)
+      
+      # Only keep tables with a Name column
+      if (!any(str_detect(names(df), regex(&quot;name&quot;, ignore_case = TRUE)))) return(NULL)
+      
+      # Standardize column names
+      names(df) &lt;- names(df) %&gt;%
+        {ifelse(is.na(.) | . == &quot;&quot;, paste0(&quot;V&quot;, seq_along(.)), .)} %&gt;%
+        tolower() %&gt;%
+        str_replace_all(&quot;\\s+&quot;, &quot;_&quot;)
+      
+      # Add state column
+      df$state &lt;- state_name
+      
+      # Extract numeric height from any column containing &quot;height&quot;
+      height_col &lt;- grep(&quot;height&quot;, names(df), ignore.case = TRUE)
+      if (length(height_col) &gt; 0) {
+        df$height &lt;- df[[height_col[1]]]  # take first matching height column
+      } else {
+        df$height &lt;- NA_character_
+      }
+      
+      df
+    })
+    
+    tables &lt;- compact(tables)  # remove NULL tables
+    tables
+    
+  }, error = function(e) {
+    message(&quot;Failed to read &quot;, url, &quot;: &quot;, e$message)
+    NULL
+  })
+}
+
+# ---- 4. Scrape all state pages with a short pause between requests ----
+all_tables &lt;- map(state_links, ~{
+  Sys.sleep(0.5)  # polite delay
+  get_lighthouse_tables(.x)
+})
+
+# ---- 5. Flatten list of tables ----
+all_tables &lt;- flatten(all_tables)
+
+# ---- 6. Standardize column names and convert all columns to character ----
+all_tables &lt;- map(all_tables, ~{
+  df &lt;- .
+  
+  colnames(df) &lt;- colnames(df) %&gt;%
+    {ifelse(is.na(.) | . == &quot;&quot;, paste0(&quot;V&quot;, seq_along(.)), .)} %&gt;%
+    tolower() %&gt;%
+    str_replace_all(&quot;\\s+&quot;, &quot;_&quot;)
+  
+  # Ensure essential columns exist
+  if(!&quot;state&quot; %in% colnames(df)) df$state &lt;- NA_character_
+  if(!&quot;name&quot; %in% colnames(df)) df$name &lt;- NA_character_
+  if(!&quot;location&quot; %in% colnames(df)) df$location &lt;- NA_character_
+  if(!&quot;height&quot; %in% colnames(df)) df$height &lt;- NA_character_
+  
+  colnames(df) &lt;- make.unique(colnames(df), sep = &quot;_dup_&quot;)
+  df %&gt;% mutate(across(everything(), as.character))
+})
+
+# ---- 7. Combine into master dataframe ----
+lighthouses_all &lt;- bind_rows(all_tables)
+
+# ---- 8. Clean and select relevant columns ----
+lighthouses_clean &lt;- lighthouses_all %&gt;%
+  fill(state, .direction = &quot;down&quot;) %&gt;%
+  mutate(
+    across(where(is.character), ~ str_squish(.) %&gt;% str_replace_all(&quot;\n&quot;, &quot; &quot;)),
+    year_first_lit = str_extract(year_first_lit, &quot;\\d{4}&quot;) %&gt;% as.integer(),
+    height_ft = str_extract(height, &quot;\\d+\\.?\\d*&quot;) %&gt;% as.numeric()
+  ) %&gt;%
+  filter(!is.na(name) &amp; name != &quot;&quot;) %&gt;%
+  select(-height)  # keep numeric height_ft only
+
+# ---- 9. Sanity Checks ----
+dim(lighthouses_clean)</code></pre>
+<pre><code>## [1] 1595   77</code></pre>
+<pre class="r"><code>head(lighthouses_clean, 10)</code></pre>
+<pre><code>## # A tibble: 10 × 77
+##    name     image location coordinates year_first_lit automated year_deactivated
+##    &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;                &lt;int&gt; &lt;chr&gt;     &lt;chr&gt;           
+##  1 Avery R… &lt;NA&gt;  Machias… .mw-parser…           1875 1926      1947(Destroyed) 
+##  2 Baker I… &lt;NA&gt;  Cranber… 44°14′17″N…           1828 1966      Active          
+##  3 Bass Ha… &lt;NA&gt;  Tremont… 44°13′18″N…           1858 1974      Active          
+##  4 Bear Is… &lt;NA&gt;  Cranber… 44°17′02″N…           1839 1989      Active(Inactive…
+##  5 Blue Hi… &lt;NA&gt;  Blue Hi… 44°14′56″N…           1857 1935      1935 (Former)Ac…
+##  6 Boon Is… &lt;NA&gt;  York(Bo… 43°07′17″N…           1811 1980      Active          
+##  7 Browns … &lt;NA&gt;  Vinalha… 44°06′42″N…           1832 1987      Active          
+##  8 Burnt C… &lt;NA&gt;  Swan&#39;s … 44°08′03″N…           1872 1975      Active          
+##  9 Burnt I… &lt;NA&gt;  Boothba… 43°49′31″N…           1821 1988      Active          
+## 10 Cape El… &lt;NA&gt;  Cape El… 43°33′58″N…           1828 1963 (Ea… 1924 (West)Acti…
+## # ℹ 70 more variables: current_lens &lt;chr&gt;, focal_height &lt;chr&gt;, state &lt;chr&gt;,
+## #   status &lt;chr&gt;, light &lt;chr&gt;, `name[9]` &lt;chr&gt;, focalheight &lt;chr&gt;,
+## #   `built[note_1]` &lt;chr&gt;, deactivated &lt;chr&gt;, tower_height &lt;chr&gt;,
+## #   waterway &lt;chr&gt;, year_built &lt;chr&gt;, lens_used &lt;chr&gt;, uscgnumber &lt;chr&gt;,
+## #   admiraltynumber &lt;chr&gt;, notes &lt;chr&gt;, municipality &lt;chr&gt;, established &lt;chr&gt;,
+## #   `tower_heightin_meters_(ft)` &lt;chr&gt;, `focal_planein_meters_(ft)` &lt;chr&gt;,
+## #   current_status &lt;chr&gt;, current_condition &lt;chr&gt;, yearbuilt &lt;chr&gt;, …</code></pre>
+<p>With lighthouse tables collected from all state-level pages, we now
+clean and standardize the combined dataset so it can be used for
+analysis and mapping. Because the tables vary slightly across states, we
+select only the most relevant columns - such as state, name,
+coordinates, year first lit, height, etc. - using flexible matching. We
+then fill down missing state values where necessary, clean text fields
+to remove extra whitespace and line breaks, and extract numeric values
+from the year and height columns. We also remove rows that do not
+correspond to actual lighthouses (such as repeated headers or notes) and
+drop original text-based columns once numeric versions have been
+created. The result is a consistent dataset ready for filtering,
+searching, and geographic visualization.</p>
+<pre class="r"><code>lighthouses_clean &lt;- lighthouses_all %&gt;%
+  # ---- 1. Ensure necessary columns exist ----
+  mutate(
+    # Ensure height variants
+    height = if (&quot;height&quot; %in% colnames(.)) height else NA_character_,
+    height_ft = if (&quot;height_ft&quot; %in% colnames(.)) height_ft else NA_character_,
+    
+    # Ensure automated variants exist
+    automated = if (&quot;automated&quot; %in% colnames(.)) automated else NA_character_,
+    year_automated = if (&quot;year_automated&quot; %in% colnames(.)) year_automated else NA_character_
+  ) %&gt;%
+  
+  # ---- 2. Select relevant columns plus potential variants ----
+  select(any_of(c(
+    &quot;state&quot;,
+    &quot;name&quot;,
+    &quot;location&quot;,
+    &quot;coordinates&quot;,
+    &quot;year_first_lit&quot;,
+    &quot;automated&quot;, &quot;year_automated&quot;,
+    &quot;current_lens&quot;,
+    &quot;height&quot;, &quot;height_ft&quot;
+  ))) %&gt;%
+  
+  # ---- 3. Fill down state values ----
+  fill(state, .direction = &quot;down&quot;) %&gt;%
+  
+  # ---- 4. Clean text fields ----
+  mutate(across(where(is.character), ~ str_squish(.) %&gt;% str_replace_all(&quot;\n&quot;, &quot; &quot;))) %&gt;%
+  
+  # ---- 5. Consolidate height columns to a single numeric column ----
+  mutate(
+    height = coalesce(height, height_ft),
+    height_ft = str_extract(height, &quot;\\d+\\.?\\d*&quot;) %&gt;% as.numeric()
+  ) %&gt;%
+  
+  # ---- 6. Consolidate automated column safely ----
+  mutate(
+    automated = coalesce(automated, year_automated)
+  ) %&gt;%
+  
+  # ---- 7. Remove rows without a lighthouse name ----
+  filter(!is.na(name) &amp; name != &quot;&quot;) %&gt;%
+  
+  # ---- 8. Drop temporary or redundant columns ----
+  select(-c(height, year_automated)) %&gt;%
+  
+  # ---- 9. Reorder columns exactly as desired ----
+  select(
+    state,
+    name,
+    location,
+    coordinates,
+    year_first_lit,
+    automated,
+    current_lens,
+    height_ft
+  )
+
+# ---- Sanity Checks ----
+# Check number of rows and columns
+dim(lighthouses_clean)</code></pre>
+<pre><code>## [1] 1595    8</code></pre>
+<pre class="r"><code># Preview first 10 rows of key columns
+key_cols &lt;- c(&quot;name&quot;, &quot;location&quot;, &quot;coordinates&quot;, &quot;year_first_lit&quot;,
+              &quot;automated&quot;, &quot;current_lens&quot;, &quot;height_ft&quot;, &quot;state&quot;)
+head(lighthouses_clean %&gt;% select(any_of(key_cols)), 10)</code></pre>
+<pre><code>## # A tibble: 10 × 8
+##    name     location coordinates year_first_lit automated current_lens height_ft
+##    &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;       &lt;chr&gt;          &lt;chr&gt;     &lt;chr&gt;            &lt;dbl&gt;
+##  1 Avery R… Machias… .mw-parser… 1875           1926      None                56
+##  2 Baker I… Cranber… 44°14′17″N… 1828 (Former)… 1966      Fourth-orde…       105
+##  3 Bass Ha… Tremont… 44°13′18″N… 1858           1974      Fourth-orde…        56
+##  4 Bear Is… Cranber… 44°17′02″N… 1839 (Former)… 1989      Plastic            100
+##  5 Blue Hi… Blue Hi… 44°14′56″N… 1857 (Former)… 1935      Unknown             25
+##  6 Boon Is… York(Bo… 43°07′17″N… 1811 (Former)… 1980      VRB-25             137
+##  7 Browns … Vinalha… 44°06′42″N… 1832 (Former)… 1987      Fifth-order…        39
+##  8 Burnt C… Swan&#39;s … 44°08′03″N… 1872           1975      Unknown             75
+##  9 Burnt I… Boothba… 43°49′31″N… 1821           1988      Electrified…        61
+## 10 Cape El… Cape El… 43°33′58″N… 1828 (West to… 1963 (Ea… VRB-25             129
+## # ℹ 1 more variable: state &lt;chr&gt;</code></pre>
+<pre class="r"><code># Inspect structure
+glimpse(lighthouses_clean)</code></pre>
+<pre><code>## Rows: 1,595
+## Columns: 8
+## $ state          &lt;chr&gt; &quot;Maine&quot;, &quot;Maine&quot;, &quot;Maine&quot;, &quot;Maine&quot;, &quot;Maine&quot;, &quot;Maine&quot;, &quot;…
+## $ name           &lt;chr&gt; &quot;Avery Rock Light&quot;, &quot;Baker Island Light&quot;, &quot;Bass Harbor …
+## $ location       &lt;chr&gt; &quot;Machias(Machias Bay)&quot;, &quot;Cranberry Isles(Baker Island)&quot;…
+## $ coordinates    &lt;chr&gt; &quot;.mw-parser-output .geo-default,.mw-parser-output .geo-…
+## $ year_first_lit &lt;chr&gt; &quot;1875&quot;, &quot;1828 (Former)1855 (Current)&quot;, &quot;1858&quot;, &quot;1839 (F…
+## $ automated      &lt;chr&gt; &quot;1926&quot;, &quot;1966&quot;, &quot;1974&quot;, &quot;1989&quot;, &quot;1935&quot;, &quot;1980&quot;, &quot;1987&quot;,…
+## $ current_lens   &lt;chr&gt; &quot;None&quot;, &quot;Fourth-order Fresnel&quot;, &quot;Fourth-order Fresnel&quot;,…
+## $ height_ft      &lt;dbl&gt; 56, 105, 56, 100, 25, 137, 39, 75, 61, 129, 88, 37, 59,…</code></pre>
+<p>Many of the coordinates in the dataset are currently stored as crude
+strings, often in degrees with directional indicators (e.g., “42.9672°N
+70.6231°W”). To make these usable for mapping and spatial analysis, we
+convert the coordinates into decimal degrees. This involves splitting
+the latitude and longitude, removing any directional symbols, and
+applying the correct sign based on whether the coordinate is north/south
+or east/west. After this transformation, the dataset will have numeric
+lat and lon columns, allowing us to plot lighthouse locations on maps or
+perform geographic filtering.</p>
+<pre class="r"><code>lighthouses_clean &lt;- lighthouses_clean %&gt;%
+  mutate(
+    # Remove parentheses/brackets and extra spaces
+    coords_clean = str_remove_all(coordinates, &quot;\\(.*?\\)|\\[.*?\\]&quot;) %&gt;% str_squish(),
+
+    # Extract lat/lon with decimal and hemisphere
+    lat_raw = str_extract(coords_clean, &quot;[-]?\\d+\\.?\\d*°?\\s*[NS]&quot;),
+    lon_raw = str_extract(coords_clean, &quot;[-]?\\d+\\.?\\d*°?\\s*[EW]&quot;),
+
+    # Convert to numeric
+    lat = as.numeric(str_remove_all(lat_raw, &quot;[°NS]&quot;)),
+    lon = as.numeric(str_remove_all(lon_raw, &quot;[°EW]&quot;)),
+
+    # Apply sign based on hemisphere
+    lat = ifelse(str_detect(lat_raw, &quot;S&quot;), -lat, lat),
+    lon = ifelse(str_detect(lon_raw, &quot;W&quot;), -lon, lon)
+  ) %&gt;%
+  filter(!is.na(lat) &amp; !is.na(lon))
+
+# ---- Sanity Check ----
+# Preview first 10 rows of lat/lon
+lighthouses_clean %&gt;% select(name, state, lat, lon) %&gt;% head(10)</code></pre>
+<pre><code>## # A tibble: 10 × 4
+##    name                    state   lat   lon
+##    &lt;chr&gt;                   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 Avery Rock Light        Maine  44.7 -67.3
+##  2 Baker Island Light      Maine  44.2 -68.2
+##  3 Bass Harbor Head Light  Maine  44.2 -68.3
+##  4 Bear Island Light       Maine  44.3 -68.3
+##  5 Blue Hill Bay Light     Maine  44.2 -68.5
+##  6 Boon Island Light       Maine  43.1 -70.5
+##  7 Browns Head Light       Maine  44.1 -68.9
+##  8 Burnt Coat Harbor Light Maine  44.1 -68.4
+##  9 Burnt Island Light      Maine  43.8 -69.6
+## 10 Cape Elizabeth Lights   Maine  43.6 -70.2</code></pre>
+<div id="lighthouse-lens-explore-the-data" class="section level3">
+<h3>Lighthouse Lens: Explore the Data</h3>
+<p>Once the lighthouse dataset has been cleaned and coordinates
+converted, it becomes useful to explore it dynamically. A simple way to
+do this is by defining a search function that allows filtering by one or
+more criteria such as state, name, age, or height. This enables quick
+querying of the dataset to answer questions like “Which lighthouses are
+taller than 150 feet?” or “Show all lighthouses built before 1850 in
+Massachusetts.” By wrapping these filters into a function, the dataset
+becomes interactive and easier to analyze or visualize on a map.</p>
+<pre class="r"><code># Function to search/filter lighthouses
+search_lighthouses &lt;- function(df,
+                               name_search = NULL,
+                               state_search = NULL,
+                               location_search = NULL,
+                               coordinates_search = NULL,
+                               min_year = NULL,
+                               max_year = NULL,
+                               automated_search = NULL,
+                               lens_search = NULL,
+                               min_height = NULL,
+                               max_height = NULL) {
+  
+  results &lt;- df
+  
+  # Helper for safe text filtering
+  safe_text_filter &lt;- function(column, value) {
+    str_detect(column, fixed(value, ignore_case = TRUE))
+  }
+  
+  # ---- Text filters ----
+  if (!is.null(name_search))       results &lt;- results %&gt;% filter(safe_text_filter(name, name_search))
+  if (!is.null(state_search))      results &lt;- results %&gt;% filter(safe_text_filter(state, state_search))
+  if (!is.null(location_search))   results &lt;- results %&gt;% filter(safe_text_filter(location, location_search))
+  if (!is.null(coordinates_search))results &lt;- results %&gt;% filter(safe_text_filter(coordinates, coordinates_search))
+  if (!is.null(automated_search))  results &lt;- results %&gt;% filter(safe_text_filter(automated, automated_search))
+  if (!is.null(lens_search))       results &lt;- results %&gt;% filter(safe_text_filter(current_lens, lens_search))
+  
+  # ---- Numeric filters ----
+  if (!is.null(min_year))   results &lt;- results %&gt;% filter(!is.na(year_first_lit) &amp; year_first_lit &gt;= min_year)
+  if (!is.null(max_year))   results &lt;- results %&gt;% filter(!is.na(year_first_lit) &amp; year_first_lit &lt;= max_year)
+  if (!is.null(min_height)) results &lt;- results %&gt;% filter(!is.na(height_ft) &amp; height_ft &gt;= min_height)
+  if (!is.null(max_height)) results &lt;- results %&gt;% filter(!is.na(height_ft) &amp; height_ft &lt;= max_height)
+  
+  # ---- Return results ----
+  if (nrow(results) == 0) {
+    message(&quot;No lighthouses found matching these criteria.&quot;)
+    return(NULL)
+  } else {
+    return(results)
+  }
+}
+
+# ---- Example Usage ---
+# All lighthouses taller than 150 ft
+search_lighthouses(lighthouses_clean, min_height = 150)</code></pre>
+<pre><code>## # A tibble: 66 × 13
+##    state        name  location coordinates year_first_lit automated current_lens
+##    &lt;chr&gt;        &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;       &lt;chr&gt;          &lt;chr&gt;     &lt;chr&gt;       
+##  1 Maine        Monh… Monhega… 43°45′53″N… 1824 (Former)… 1959      VRB-25      
+##  2 Maine        Segu… Georget… 43°42′27″N… 1795 (Former)… 1985      First-order…
+##  3 Massachuset… Cape… Rockpor… 42°38′12″N… 1861           1979(Sou… VRB-25      
+##  4 Massachuset… Gay … Aquinnah 41°20′54″N… 1856[b]        1956      DCB-224     
+##  5 Massachuset… High… Truro(N… 41°23′27″N… 1857[10]       1987[10]  LED         
+##  6 Massachuset… Hosp… Beverly  42°32′54″N… 1927           Unknown   Unknown     
+##  7 Massachuset… Sank… Nantuck… 41°17′04″N… 1850           1965      DCB-224     
+##  8 New Hampshi… Nava… Navassa… 18°23′50.7… 1917           1929      None        
+##  9 Rhode Island Bloc… New Sho… 41°09′35″N… 1875           1990      First-order…
+## 10 Vermont      Nava… Navassa… 18°23′50.7… 1917           1929      None        
+## # ℹ 56 more rows
+## # ℹ 6 more variables: height_ft &lt;dbl&gt;, coords_clean &lt;chr&gt;, lat_raw &lt;chr&gt;,
+## #   lon_raw &lt;chr&gt;, lat &lt;dbl&gt;, lon &lt;dbl&gt;</code></pre>
+<pre class="r"><code># Built before 1850 in Massachusetts
+search_lighthouses(lighthouses_clean, state_search = &quot;Massachusetts&quot;, max_year = 1849)</code></pre>
+<pre><code>## # A tibble: 21 × 13
+##    state        name  location coordinates year_first_lit automated current_lens
+##    &lt;chr&gt;        &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;       &lt;chr&gt;          &lt;chr&gt;     &lt;chr&gt;       
+##  1 Massachuset… Bake… Salem    42°32′11″N… 1821           1972      190mm       
+##  2 Massachuset… Bird… Marion(… 41°40′10″N… 1819           1997(Rel… ML-300[5]   
+##  3 Massachuset… Bost… Boston(… 42°19′41″N… 1783           1998      Second-orde…
+##  4 Massachuset… Ned … Mattapo… 41°39′03″N… 1838           1923      250mm       
+##  5 Massachuset… Old … Scituat… 42°12′17″N… 1811           1994(Rel… Replica lan…
+##  6 Massachuset… Palm… New Bed… 41°37′37″N… 1849           1941      Fifth-order…
+##  7 Massachuset… Plym… Plymouth 42°00′13″N… 1843[b]        1986      100mm       
+##  8 Massachuset… Poin… Hyannis  41°36′35″N… 1816[23]       Never     None        
+##  9 Massachuset… Bake… Salem    42°32′11″N… 1815           Never     &lt;NA&gt;        
+## 10 Massachuset… Bost… Boston(… 42°19′41″N… 1716           Never     &lt;NA&gt;        
+## # ℹ 11 more rows
+## # ℹ 6 more variables: height_ft &lt;dbl&gt;, coords_clean &lt;chr&gt;, lat_raw &lt;chr&gt;,
+## #   lon_raw &lt;chr&gt;, lat &lt;dbl&gt;, lon &lt;dbl&gt;</code></pre>
+<pre class="r"><code># Lighthouses with Fresnel lenses
+search_lighthouses(lighthouses_clean, lens_search = &quot;Fresnel&quot;)</code></pre>
+<pre><code>## # A tibble: 77 × 13
+##    state name         location coordinates year_first_lit automated current_lens
+##    &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;    &lt;chr&gt;       &lt;chr&gt;          &lt;chr&gt;     &lt;chr&gt;       
+##  1 Maine Baker Islan… Cranber… 44°14′17″N… 1828 (Former)… 1966      Fourth-orde…
+##  2 Maine Bass Harbor… Tremont… 44°13′18″N… 1858           1974      Fourth-orde…
+##  3 Maine Browns Head… Vinalha… 44°06′42″N… 1832 (Former)… 1987      Fifth-order…
+##  4 Maine Cape Neddic… York(Ca… 43°09′55″N… 1879           1987      Fourth-orde…
+##  5 Maine Doubling Po… Arrowsic 43°52′57″N… 1898           1988      Fifth-order…
+##  6 Maine Eagle Islan… Eagle I… 44°13′03″N… 1838 (Former)… 1959      Fourth-orde…
+##  7 Maine Fort Point … Stockto… 44°28′02″N… 1836 (Former)… 1988      Fourth-orde…
+##  8 Maine Heron Neck … Vinalha… 44°01′30″N… 1854           1984      Fifth-order…
+##  9 Maine Owls Head L… Owls He… 44°05′32″N… 1825           1989      Fourth-orde…
+## 10 Maine Pemaquid Po… Bristol  43°50′12″N… 1827 (Former)… 1934      Fourth-orde…
+## # ℹ 67 more rows
+## # ℹ 6 more variables: height_ft &lt;dbl&gt;, coords_clean &lt;chr&gt;, lat_raw &lt;chr&gt;,
+## #   lon_raw &lt;chr&gt;, lat &lt;dbl&gt;, lon &lt;dbl&gt;</code></pre>
+<pre class="r"><code># Specific partial name
+search_lighthouses(lighthouses_clean, name_search = &quot;Cape&quot;)</code></pre>
+<pre><code>## # A tibble: 28 × 13
+##    state        name  location coordinates year_first_lit automated current_lens
+##    &lt;chr&gt;        &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;       &lt;chr&gt;          &lt;chr&gt;     &lt;chr&gt;       
+##  1 Maine        Cape… Cape El… 43°33′58″N… 1828 (West to… 1963 (Ea… VRB-25      
+##  2 Maine        Cape… York(Ca… 43°09′55″N… 1879           1987      Fourth-orde…
+##  3 Massachuset… Cape… Rockpor… 42°38′12″N… 1861           1979(Sou… VRB-25      
+##  4 Massachuset… Cape… Edgarto… 41°25′10″N… 1893[b]        1943      300mm       
+##  5 New York     Cape… Cape Vi… 44°7′10″N … 1904           Never     None        
+##  6 Delaware     Cape… Lewes(C… 38°47′25″N… 1825[8](First… Never     None        
+##  7 Delaware     Cape… Lewes(C… 38°46′41″N… 1769           Never     None        
+##  8 Washington   Cape… Cape Di… 46°16′33″N… 1856           1973      Fourth-orde…
+##  9 Washington   Cape… Tatoosh… 48°23′31″N… 1857           1977      None        
+## 10 Oregon       Cape… Coos Bay .mw-parser… 1866 (First) … 1966      None        
+## # ℹ 18 more rows
+## # ℹ 6 more variables: height_ft &lt;dbl&gt;, coords_clean &lt;chr&gt;, lat_raw &lt;chr&gt;,
+## #   lon_raw &lt;chr&gt;, lat &lt;dbl&gt;, lon &lt;dbl&gt;</code></pre>
+<pre class="r"><code># Multiple filters: Massachusetts, Fresnel lens, height &gt; 100
+search_lighthouses(lighthouses_clean,
+                   state_search = &quot;Massachusetts&quot;,
+                   lens_search = &quot;Fresnel&quot;,
+                   min_height = 100)</code></pre>
+<pre><code>## # A tibble: 1 × 13
+##   state         name  location coordinates year_first_lit automated current_lens
+##   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;       &lt;chr&gt;          &lt;chr&gt;     &lt;chr&gt;       
+## 1 Massachusetts Bost… Boston(… 42°19′41″N… 1783           1998      Second-orde…
+## # ℹ 6 more variables: height_ft &lt;dbl&gt;, coords_clean &lt;chr&gt;, lat_raw &lt;chr&gt;,
+## #   lon_raw &lt;chr&gt;, lat &lt;dbl&gt;, lon &lt;dbl&gt;</code></pre>
+</div>
+<div id="coastal-chronicals-charting-two-centuries-of-light"
+class="section level3">
+<h3>Coastal Chronicals: Charting Two Centuries of Light</h3>
+<p>Mapping U.S. lighthouses by year of construction reveals both
+geographic and historical patterns. The oldest lighthouses are heavily
+clustered along the Northeast coast, reflecting early colonial
+settlement, dense shipping activity, and the establishment of major
+ports such as Boston and New York. Mid-19th-century constructions spread
+southward along the Atlantic coast, while the West Coast shows a later
+surge in the late 19th and early 20th centuries, consistent with
+westward expansion and the growth of Pacific maritime commerce.</p>
+<pre class="r"><code># 1. Clean year: take last 4-digit number as &#39;Current&#39; tower, handle missing years
+lighthouse_map_data &lt;- lighthouses_clean %&gt;%
+  mutate(
+    year_numbers = str_extract_all(year_first_lit, &quot;\\d{4}&quot;),
+    year_num = map_dbl(year_numbers,
+                   ~ if(length(.x) == 0) NA_real_
+                   else as.numeric(min(.x)))
+  ) %&gt;%
+  # Keep only rows with valid year and coordinates
+  filter(!is.na(lat) &amp; !is.na(lon) &amp; !is.na(year_num)) %&gt;%
+  
+  # 2. Create historical era bins for stronger visual contrast
+  mutate(
+    era = case_when(
+      year_num &lt; 1800              ~ &quot;Pre-1800&quot;,
+      year_num &gt;= 1800 &amp; year_num &lt; 1850 ~ &quot;1800–1849&quot;,
+      year_num &gt;= 1850 &amp; year_num &lt; 1900 ~ &quot;1850–1899&quot;,
+      year_num &gt;= 1900 &amp; year_num &lt; 1950 ~ &quot;1900–1949&quot;,
+      year_num &gt;= 1950              ~ &quot;1950+&quot;
+    ),
+    era = factor(era, levels = c(&quot;Pre-1800&quot;,&quot;1800–1849&quot;,&quot;1850–1899&quot;,&quot;1900–1949&quot;,&quot;1950+&quot;))
+  ) %&gt;%
+  
+  # 3. Reorder so earliest era is drawn last (appears on top)
+  arrange(factor(era, levels = c(&quot;1800–1849&quot;,&quot;1850–1899&quot;,&quot;1900–1949&quot;,&quot;1950+&quot;,&quot;Pre-1800&quot;)))
+
+# ---- 4. Get U.S. map data ----
+us_map &lt;- ggplot2::map_data(&quot;state&quot;)
+
+# 5. Full Contiguous U.S. map: filter to contiguous bounds
+lighthouse_contiguous &lt;- lighthouse_map_data %&gt;%
+  filter(lon &gt;= -125 &amp; lon &lt;= -66,
+         lat &gt;= 24  &amp; lat &lt;= 50)
+
+# 6. ---- Display ----
+theme_set(theme_minimal(base_size = 14))  # consistent theme
+
+ggplot() +
+  # U.S. states as base map
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group),
+               fill = &quot;gray92&quot;, color = &quot;white&quot;, linewidth = 0.2) +
+  
+  # Lighthouse points (solid circles, no outline)
+  geom_point(data = lighthouse_contiguous,
+             aes(x = lon, y = lat, color = era),
+             size = 3.2, alpha = 0.9) +
+  
+  # Discrete color scale emphasizes early historical clusters
+  scale_color_viridis_d(option = &quot;plasma&quot;, direction = -1, name = &quot;Era Built&quot;) +
+  
+  labs(title = &quot;U.S. Lighthouses by Era of Construction (Contiguous States)&quot;,
+       x = &quot;Longitude&quot;, y = &quot;Latitude&quot;) +
+  
+  coord_quickmap(xlim = c(-125, -66), ylim = c(24, 50)) +
+  
+  theme(
+    plot.title = element_text(face = &quot;bold&quot;, size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(face = &quot;bold&quot;, size = 12),
+    axis.title.y = element_text(face = &quot;bold&quot;, size = 12),
+    legend.title = element_text(face = &quot;bold&quot;, size = 12),
+    legend.text = element_text(size = 11)
+  )</code></pre>
+<p><img src="p02_files/figure-html/map_lighthouses_year-1.png" width="960" /></p>
+<pre class="r"><code># 7. Northeast / Mid-Atlantic zoom: focus on oldest lighthouses
+lighthouse_northeast &lt;- lighthouse_map_data %&gt;%
+  filter(lon &gt;= -80 &amp; lon &lt;= -66,   # Roughly from mid-Atlantic to Maine
+         lat &gt;= 36 &amp; lat &lt;= 45)
+
+# 8. ---- Display ----
+ggplot() +
+  # U.S. states as base map
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group),
+               fill = &quot;gray92&quot;, color = &quot;white&quot;, linewidth = 0.2) +
+  
+  # Lighthouse points (same ordering ensures Pre-1800 visible)
+  geom_point(data = lighthouse_northeast,
+             aes(x = lon, y = lat, color = era),
+             size = 3.5, alpha = 0.95) +
+  
+  # Same era color scale for direct comparison
+  scale_color_viridis_d(option = &quot;plasma&quot;, direction = -1, name = &quot;Era Built&quot;) +
+  
+  labs(title = &quot;Northeast U.S. Lighthouses by Era of Construction&quot;,
+       x = &quot;Longitude&quot;, y = &quot;Latitude&quot;) +
+  
+  coord_quickmap(xlim = c(-80, -66), ylim = c(36, 45)) +
+  
+  theme(
+    plot.title = element_text(face = &quot;bold&quot;, size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(face = &quot;bold&quot;, size = 12),
+    axis.title.y = element_text(face = &quot;bold&quot;, size = 12),
+    legend.title = element_text(face = &quot;bold&quot;, size = 12),
+    legend.text = element_text(size = 11)
+  )</code></pre>
+<p><img src="p02_files/figure-html/map_lighthouses_year-2.png" width="960" /></p>
+</div>
+<div id="boxplots-ahoy-regional-construction-trends"
+class="section level3">
+<h3>Boxplots Ahoy: Regional Construction Trends</h3>
+<p>Faceted boxplots of construction year by state reveal regional
+variation in lighthouse development. Northeastern states such as
+Massachusetts, New York, and Rhode Island show early construction peaks
+in the 18th and early 19th centuries, reflecting dense maritime commerce
+and colonial-era port activity, while Maine and Delaware are slightly
+later. Southern states and those along the Gulf Coast generally have
+later median construction years. West Coast states, including
+California, Oregon, and Washington, have their earliest lighthouses
+built in the mid-to-late 19th century, reflecting later settlement and
+port development.</p>
+<pre class="r"><code># ---- 1. Choose states manually ----
+selected_states &lt;- c(&quot;Massachusetts&quot;, &quot;Rhode Island&quot;, &quot;Maine&quot;, &quot;Delaware&quot;, &quot;New York&quot;, &quot;North Carolina&quot;, &quot;Florida&quot;, &quot;California&quot;, &quot;Oregon&quot;, &quot;Washington&quot;)
+
+# ---- 2. Prepare data ----
+lighthouse_boxplot_selected &lt;- lighthouses_clean %&gt;%
+  filter(state %in% selected_states) %&gt;%
+  mutate(
+    year_first_lit = as.numeric(year_first_lit),
+    
+    # categorize by era
+    era = case_when(
+      year_first_lit &lt; 1800                          ~ &quot;Pre-1800&quot;,
+      year_first_lit &gt;= 1800 &amp; year_first_lit &lt; 1850 ~ &quot;1800–1849&quot;,
+      year_first_lit &gt;= 1850 &amp; year_first_lit &lt; 1900 ~ &quot;1850–1899&quot;,
+      year_first_lit &gt;= 1900 &amp; year_first_lit &lt; 1950 ~ &quot;1900–1949&quot;,
+      year_first_lit &gt;= 1950                         ~ &quot;1950+&quot;
+    ),
+    era = factor(era, levels = c(&quot;Pre-1800&quot;,&quot;1800–1849&quot;,&quot;1850–1899&quot;,&quot;1900–1949&quot;,&quot;1950+&quot;))
+  ) %&gt;%
+  filter(!is.na(era)) %&gt;%
+  
+  # Reorder states by median construction year
+  group_by(state) %&gt;%
+  mutate(median_year = median(year_first_lit, na.rm = TRUE)) %&gt;%
+  ungroup() %&gt;%
+  mutate(state = factor(state, levels = unique(state[order(median_year)])))</code></pre>
+<pre><code>## Warning: There was 1 warning in `mutate()`.
+## ℹ In argument: `year_first_lit = as.numeric(year_first_lit)`.
+## Caused by warning:
+## ! NAs introduced by coercion</code></pre>
+<pre class="r"><code># ---- 3. Plot ----
+ggplot(lighthouse_boxplot_selected, aes(x = state, y = year_first_lit)) +
+  geom_boxplot(outlier.shape = NA, fill = &quot;gray90&quot;, color = &quot;black&quot;, alpha = 0.6) +
+  geom_jitter(aes(color = era), width = 0.2, size = 2.5, alpha = 0.85) +
+  scale_color_viridis_d(option = &quot;plasma&quot;, direction = -1, name = &quot;Era Built&quot;) +
+  coord_flip() +
+  labs(
+    title = &quot;Distribution of Lighthouse Construction Years for Selected States&quot;,
+    x = &quot;State&quot;,
+    y = &quot;Year Built&quot;
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = &quot;bold&quot;, size = 16, hjust = 0.5),
+    axis.title.x = element_text(face = &quot;bold&quot;, size = 12),
+    axis.title.y = element_text(face = &quot;bold&quot;, size = 12),
+    legend.title = element_text(face = &quot;bold&quot;, size = 12),
+    legend.text = element_text(size = 11)
+  )</code></pre>
+<p><img src="p02_files/figure-html/map_lighthouses_year_alternative-1.png" width="960" /></p>
+</div>
+<div id="towers-through-time-how-lighthouses-grew"
+class="section level3">
+<h3>Towers Through Time: How Lighthouses Grew</h3>
+<p>Plotting lighthouse height against year of construction reveals
+patterns in architectural and technological evolution, alongside wide
+variation in tower sizes. Heights show no consistent upward trend; both
+historical and modern outliers exist. Some early lighthouses were
+exceptionally tall to serve major ports, such as Cape Mendocino Light
+(California, 422 ft, 1868) with its first‑order Fresnel lens for maximum
+visibility. Conversely, some smaller or modern lighthouses, like
+Craighill Channel Upper Range Front Light (Maryland, 15 ft, 1886), were
+designed for precise harbor guidance. Tower height reflected functional
+needs, geographic context, and technological advances: better materials,
+improved lighting systems, and advanced lenses allowed taller towers,
+while superior optics sometimes reduced the need for large
+structures.</p>
+<pre class="r"><code># ---- 1. Prepare data ----
+lighthouse_height_data &lt;- lighthouses_clean %&gt;%
+  # Convert year_first_lit to numeric; non-numeric values become NA
+  mutate(year_first_lit = as.numeric(year_first_lit)) %&gt;%
+  filter(!is.na(height_ft) &amp; !is.na(year_first_lit)) %&gt;%
+  mutate(
+    era = case_when(
+      year_first_lit &lt; 1800                ~ &quot;Pre-1800&quot;,
+      year_first_lit &gt;= 1800 &amp; year_first_lit &lt; 1850 ~ &quot;1800–1849&quot;,
+      year_first_lit &gt;= 1850 &amp; year_first_lit &lt; 1900 ~ &quot;1850–1899&quot;,
+      year_first_lit &gt;= 1900 &amp; year_first_lit &lt; 1950 ~ &quot;1900–1949&quot;,
+      year_first_lit &gt;= 1950               ~ &quot;1950+&quot;
+    ),
+    era = factor(era, levels = c(&quot;Pre-1800&quot;,&quot;1800–1849&quot;,&quot;1850–1899&quot;,&quot;1900–1949&quot;,&quot;1950+&quot;))
+  ) %&gt;%
+  # Draw earliest era last so bright yellow points appear on top
+  arrange(desc(era == &quot;Pre-1800&quot;))</code></pre>
+<pre><code>## Warning: There was 1 warning in `mutate()`.
+## ℹ In argument: `year_first_lit = as.numeric(year_first_lit)`.
+## Caused by warning:
+## ! NAs introduced by coercion</code></pre>
+<pre class="r"><code># ---- 2. Display ----
+ggplot(lighthouse_height_data, aes(x = year_first_lit, y = height_ft, color = era)) +
+  geom_point(alpha = 0.8, size = 3) +
+  geom_smooth(method = &quot;lm&quot;, se = FALSE, color = &quot;black&quot;, linetype = &quot;dashed&quot;) +  # linear regression
+  # geom_smooth(method = &quot;loess&quot;, se = FALSE, color = &quot;black&quot;, linetype = &quot;dashed&quot;) + # optional loess instead
+
+  scale_color_viridis_d(option = &quot;plasma&quot;, direction = -1, name = &quot;Era Built&quot;) +
+
+  # Add small padding to prevent clipping
+  scale_x_continuous(
+    limits = c(min(lighthouse_height_data$year_first_lit) - 5,
+               max(lighthouse_height_data$year_first_lit) + 5)
+  ) +
+  scale_y_continuous(
+    limits = c(0, max(lighthouse_height_data$height_ft) + 20)
+  ) +
+
+  labs(
+    title = &quot;Lighthouse Height vs. Year of Construction&quot;,
+    x = &quot;Year Built&quot;,
+    y = &quot;Height (ft)&quot;
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = &quot;bold&quot;, size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(face = &quot;bold&quot;, size = 12),
+    legend.title = element_text(face = &quot;bold&quot;, size = 12),
+    legend.text = element_text(size = 11)
+  )</code></pre>
+<pre><code>## `geom_smooth()` using formula = &#39;y ~ x&#39;</code></pre>
+<p><img src="p02_files/figure-html/lighthouse_height_vs_year-1.png" width="960" /></p>
+</div>
+<div id="guided-by-light-technology-meets-architecture"
+class="section level3">
+<h3>Guided by Light: Technology Meets Architecture</h3>
+<p>Lens type and automation status are inconsistently reported, limiting
+detailed quantitative analysis, but the dataset still illustrates
+historical and technological patterns. Early lighthouses, particularly
+those from the 18th and early 19th centuries, often used classical
+Fresnel lenses—such as the first‑order rotating lenses installed in
+major ports—and were manually operated, reflecting the engineering
+standards and operational norms of the time. These towers were sited for
+maximum visibility in busy shipping areas or at heritage locations.
+Across the dataset, these historical designs coexist with later
+adaptations, showing how functional requirements, construction methods,
+and geographic context influenced lighthouse design.</p>
+<p>Newer lighthouses increasingly feature automated systems and modern
+optics. Many modern lenses, such as the VRB‑25, are Fresnel-derived but
+smaller, lighter, and designed for efficiency rather than sheer range.
+Automation reduced the need for on-site personnel and allowed
+construction in smaller or remote locations. The gradual adoption of
+classical Fresnel lenses in the 19th century and their modern
+derivatives demonstrates a clear technological evolution that improved
+the reach and efficiency of coastal lights. Considering age, height, and
+lens type together, we can trace how design choices, operational
+practices, and innovations shaped U.S. lighthouse construction over more
+than two centuries.</p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
