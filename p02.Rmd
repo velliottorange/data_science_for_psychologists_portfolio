@@ -144,7 +144,7 @@ dim(lighthouses_clean)
 head(lighthouses_clean, 10)
 ```
 
-With lighthouse tables collected from all state-level pages, we now clean and standardize the combined dataset so it can be used for analysis and mapping. Because the tables vary slightly across states, we select only the most relevant columns - such as state, name, coordinates, year first lit, height, etc. - using flexible matching. We then fill down missing state values where necessary, clean text fields to remove extra whitespace and line breaks, and extract numeric values from the year and height columns. We also remove rows that do not correspond to actual lighthouses (such as repeated headers or notes) and drop original text-based columns once numeric versions have been created. The result is a consistent dataset ready for filtering, searching, and geographic visualization.
+Although we previously standardized many fields, state tables still contain column-name variants (e.g., multiple height or automation columns). In this step, we consolidate these variants, standardize naming conventions, and finalize the structure of the master dataset.
 
 ```{r convert_data}
 lighthouses_clean <- lighthouses_all %>%
@@ -294,7 +294,7 @@ search_lighthouses <- function(df,
   }
 }
 
-# ---- Example Usage ---
+# ---- Example Usage ----
 # All lighthouses taller than 150 ft
 search_lighthouses(lighthouses_clean, min_height = 150)
 
@@ -472,7 +472,9 @@ ggplot(lighthouse_boxplot_selected, aes(x = state, y = year_first_lit)) +
 
 ### Towers Through Time: How Lighthouses Grew
 
-Plotting lighthouse height against year of construction reveals patterns in architectural and technological evolution, alongside wide variation in tower sizes. Heights show no consistent upward trend; both historical and modern outliers exist. Some early lighthouses were exceptionally tall to serve major ports, such as Cape Mendocino Light (California, 422 ft, 1868) with its first‑order Fresnel lens for maximum visibility. Conversely, some smaller or modern lighthouses, like Craighill Channel Upper Range Front Light (Maryland, 15 ft, 1886), were designed for precise harbor guidance. Tower height reflected functional needs, geographic context, and technological advances: better materials, improved lighting systems, and advanced lenses allowed taller towers, while superior optics sometimes reduced the need for large structures.
+Plotting lighthouse height against year of construction reveals patterns in architectural and technological evolution alongside wide variation in tower size. Heights show no consistent upward trend; both historical and modern outliers appear. Some early lighthouses were exceptionally tall to guard especially hazardous stretches of coastline. For example, the Cape Hatteras Lighthouse (North Carolina, 187 ft, 1870) was constructed to protect mariners navigating what is now known as the “Graveyard of the Atlantic,” a treacherous offshore region where hundreds - if not thousands - of shipwrecks have occurred. Equipped with a powerful first-order Fresnel lens, the tower maximized visibility along one of the most dangerous corridors on the eastern seaboard.
+
+Conversely, some smaller or more specialized lighthouses, such as the Craighill Channel Upper Range Front Light (Maryland, 15 ft, 1886), were engineered for close-range navigational precision. One of a paired set of range lights marking the second section of the shipping channel into Baltimore Harbor, it functioned not as a long-distance coastal beacon but as a fixed alignment aid guiding vessels safely into a busy port. Tower height ultimately reflected functional needs, geographic context, and technological change: improved materials and lighting systems enabled taller structures, while advances in optical design sometimes reduced the need for large towers.
 
 ```{r lighthouse_height_vs_year, fig.width=10, fig.height=7}
 # ---- 1. Prepare data ----
@@ -527,6 +529,6 @@ ggplot(lighthouse_height_data, aes(x = year_first_lit, y = height_ft, color = er
 
 ### Guided by Light: Technology Meets Architecture
 
-Lens type and automation status are inconsistently reported, limiting detailed quantitative analysis, but the dataset still illustrates historical and technological patterns. Early lighthouses, particularly those from the 18th and early 19th centuries, often used classical Fresnel lenses—such as the first‑order rotating lenses installed in major ports—and were manually operated, reflecting the engineering standards and operational norms of the time. These towers were sited for maximum visibility in busy shipping areas or at heritage locations. Across the dataset, these historical designs coexist with later adaptations, showing how functional requirements, construction methods, and geographic context influenced lighthouse design.
+Lens type and automation status are inconsistently reported, limiting detailed quantitative analysis, but the dataset still illustrates historical and technological patterns. Early lighthouses, particularly those from the 18th and early 19th centuries, often used classical Fresnel lenses - such as the first‑order rotating lenses installed in major ports - and were manually operated, reflecting the engineering standards and operational norms of the time. These towers were sited for maximum visibility in busy shipping areas or at heritage locations. Across the dataset, these historical designs coexist with later adaptations, showing how functional requirements, construction methods, and geographic context influenced lighthouse design.
 
 Newer lighthouses increasingly feature automated systems and modern optics. Many modern lenses, such as the VRB‑25, are Fresnel-derived but smaller, lighter, and designed for efficiency rather than sheer range. Automation reduced the need for on-site personnel and allowed construction in smaller or remote locations. The gradual adoption of classical Fresnel lenses in the 19th century and their modern derivatives demonstrates a clear technological evolution that improved the reach and efficiency of coastal lights. Considering age, height, and lens type together, we can trace how design choices, operational practices, and innovations shaped U.S. lighthouse construction over more than two centuries.
