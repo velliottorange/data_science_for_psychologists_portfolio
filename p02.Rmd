@@ -532,3 +532,10 @@ ggplot(lighthouse_height_data, aes(x = year_first_lit, y = height_ft, color = er
 Lens type and automation status are inconsistently reported, limiting detailed quantitative analysis, but the dataset still illustrates historical and technological patterns. Early lighthouses, particularly those from the 18th and early 19th centuries, often used classical Fresnel lenses - such as the first‑order rotating lenses installed in major ports - and were manually operated, reflecting the engineering standards and operational norms of the time. These towers were sited for maximum visibility in busy shipping areas or at heritage locations. Across the dataset, these historical designs coexist with later adaptations, showing how functional requirements, construction methods, and geographic context influenced lighthouse design.
 
 Newer lighthouses increasingly feature automated systems and modern optics. Many modern lenses, such as the VRB‑25, are Fresnel-derived but smaller, lighter, and designed for efficiency rather than sheer range. Automation reduced the need for on-site personnel and allowed construction in smaller or remote locations. The gradual adoption of classical Fresnel lenses in the 19th century and their modern derivatives demonstrates a clear technological evolution that improved the reach and efficiency of coastal lights. Considering age, height, and lens type together, we can trace how design choices, operational practices, and innovations shaped U.S. lighthouse construction over more than two centuries.
+
+```{r lighthouse_RDS_file}
+# Create RDS file
+dir.create("data", showWarnings = FALSE)
+
+saveRDS(lighthouses_clean, "data/lighthouses_clean.rds")
+```
