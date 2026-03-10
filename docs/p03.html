@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Ship Happens: Data-Driven Tales from the Deep</title>
+
+<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Portfolio</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="p01.html">Portfolio 1</a>
+</li>
+<li>
+  <a href="p02.html">Portfolio 2</a>
+</li>
+<li>
+  <a href="p03.html">Portfolio 3</a>
+</li>
+<li>
+  <a href="p04.html">Portfolio 4</a>
+</li>
+<li>
+  <a href="p05.html">Portfolio 5</a>
+</li>
+<li>
+  <a href="p06.html">Portfolio 6</a>
+</li>
+<li>
+  <a href="p07.html">Portfolio 7</a>
+</li>
+<li>
+  <a href="p08.html">Portfolio 8</a>
+</li>
+<li>
+  <a href="p09.html">Portfolio 9</a>
+</li>
+<li>
+  <a href="p10.html">Portfolio 10</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Ship Happens: Data-Driven Tales from the
+Deep</h1>
+
+</div>
+
+
+<p>Shipwrecks are among the most visible traces of maritime risk. From
+colonial trading vessels to modern cargo ships, maritime disasters have
+occurred along nearly every segment of the United States coastline and
+within its inland waters. These events reflect a combination of
+environmental hazards, navigational challenges, wartime activity, and
+the limitations of maritime technology across different historical
+periods.</p>
+<p>The Wikipedia page “List of shipwrecks of the United States” provides
+a consolidated record of notable wrecks across multiple states and
+territories. Although not an exhaustive historical registry, the page
+compiles standardized information such as ship name, national flag, date
+sunk, descriptive notes, and geographic coordinates when available.
+Because the page aggregates many regional shipwreck lists into a single
+document, it offers a useful starting point for building a reproducible
+dataset of maritime disasters.</p>
+<pre class="r"><code># Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(httr)
+  library(ggrepel)
+  library(viridis)
+  library(geosphere)
+  library(ggtext)
+  library(ggnewscale)
+})</code></pre>
+<p>The shipwreck data are contained on a single master Wikipedia page
+rather than split across individual state pages, but the information is
+stored in multiple tables, each roughly corresponding to a U.S. state or
+territory. To build a comprehensive dataset, we first download the
+master page and extract all tables with the “wikitable” class. Each
+table is paired with its corresponding state header to retain geographic
+context. We then parse each table into a structured dataframe,
+standardize column names, and combine all tables into a master dataset.
+Afterward, we ensure that essential columns exist (ship name, flag, date
+sunk, notes, and coordinates), clean text fields of extra whitespace,
+and remove occasional CSS artifacts embedded in the coordinates column.
+This step produces a clean, reproducible dataset suitable for further
+temporal and spatial analysis.</p>
+<pre class="r"><code># ---- 1. Function to scrape tables with dates and coordinates ----
+scrape_shipwreck_tables &lt;- function(url, source_state = NA) {
+  page &lt;- tryCatch({
+    GET(url, user_agent(&quot;Mozilla/5.0&quot;)) %&gt;% read_html()
+  }, error = function(e) return(NULL))
+  
+  if (is.null(page)) return(NULL)
+  
+  tables &lt;- page %&gt;% html_elements(&quot;table.wikitable&quot;)
+  if (length(tables) == 0) return(NULL)
+  
+  page_data &lt;- map_df(seq_along(tables), ~{
+    header_node &lt;- tables[.x] %&gt;% html_element(xpath = &quot;preceding::h2[1] | preceding::h3[1]&quot;)
+    current_state &lt;- if(!is.na(source_state)) source_state else {
+      header_node %&gt;% html_text() %&gt;% str_remove(&quot;\\[edit\\]&quot;) %&gt;% str_trim()
+    }
+    
+    rows &lt;- tables[.x] %&gt;% html_elements(&quot;tr&quot;)
+    if (length(rows) &lt;= 1) return(NULL)
+    
+    map_df(rows[-1], ~{
+      cells &lt;- .x %&gt;% html_elements(&quot;td&quot;)
+      if (length(cells) &lt; 5) return(NULL)
+      
+      coord_cell &lt;- cells[5]
+      lat_long &lt;- coord_cell %&gt;% html_element(&quot;.geo-dec&quot;) %&gt;% html_text()
+      
+      if (is.na(lat_long) || lat_long == &quot;&quot;) return(NULL)
+      
+      coords &lt;- str_split(lat_long, &quot;[\\s\\|]+&quot;, simplify = TRUE)
+      
+      tibble(
+        state = current_state,
+        ship = cells[1] %&gt;% html_text2() %&gt;% str_squish(),
+        sunk_date = cells[3] %&gt;% html_text2() %&gt;% str_squish(),
+        latitude_raw = coords[1],
+        longitude_raw = coords[2]
+      )
+    })
+  })
+  return(page_data)
+}
+
+# ---- 2. Identify sub-links from main page ----
+base_url &lt;- &quot;https://en.wikipedia.org/wiki/List_of_shipwrecks_of_the_United_States&quot;
+main_page &lt;- GET(base_url, user_agent(&quot;Mozilla/5.0&quot;)) %&gt;% read_html()
+
+hatnotes &lt;- main_page %&gt;% html_elements(&quot;.hatnote a&quot;)
+sub_links &lt;- hatnotes %&gt;% html_attr(&quot;href&quot;) %&gt;% 
+  keep(~str_detect(.x, &quot;List_of_shipwrecks_of_&quot;)) %&gt;% 
+  map_chr(~paste0(&quot;https://en.wikipedia.org&quot;, .x))
+
+sub_link_states &lt;- hatnotes %&gt;% 
+  keep(~str_detect(html_attr(.x, &quot;href&quot;), &quot;List_of_shipwrecks_of_&quot;)) %&gt;% 
+  map_chr(~{
+    res &lt;- .x %&gt;% html_element(xpath = &quot;ancestor::div[1]/preceding::h2[1]&quot;) %&gt;% html_text()
+    str_remove(res, &quot;\\[edit\\]&quot;) %&gt;% str_trim()
+  })
+
+# ---- 3. Multi-page execution ----
+main_results &lt;- scrape_shipwreck_tables(base_url)
+
+sub_results &lt;- tibble()
+if(length(sub_links) &gt; 0) {
+  sub_results &lt;- map2_df(sub_links, sub_link_states, ~{
+    message(paste(&quot;Scraping sub-page for:&quot;, .y))
+    scrape_shipwreck_tables(.x, source_state = .y)
+  })
+}</code></pre>
+<pre><code>## Scraping sub-page for: California</code></pre>
+<pre><code>## Scraping sub-page for: Florida</code></pre>
+<pre><code>## Scraping sub-page for: Massachusetts</code></pre>
+<pre><code>## Scraping sub-page for: North Carolina</code></pre>
+<pre class="r"><code># ---- 4. Final cleaning ----
+shipwrecks_clean &lt;- bind_rows(main_results, sub_results) %&gt;%
+  mutate(
+    lat_num = as.numeric(str_extract(latitude_raw, &quot;[0-9.]+&quot;)),
+    lat_dir = str_extract(latitude_raw, &quot;[NS]&quot;),
+    long_num = as.numeric(str_extract(longitude_raw, &quot;[0-9.]+&quot;)),
+    long_dir = str_extract(longitude_raw, &quot;[EW]&quot;),
+    
+    latitude = ifelse(!is.na(lat_dir) &amp; lat_dir == &quot;S&quot;, -lat_num, lat_num),
+    longitude = ifelse(!is.na(long_dir) &amp; long_dir == &quot;W&quot;, -long_num, long_num)
+  ) %&gt;%
+  filter(!is.na(latitude)) %&gt;%
+  select(state, ship, sunk_date, latitude, longitude)
+
+# Preview results
+print(paste(&quot;Total shipwrecks captured:&quot;, nrow(shipwrecks_clean)))</code></pre>
+<pre><code>## [1] &quot;Total shipwrecks captured: 315&quot;</code></pre>
+<pre class="r"><code>head(shipwrecks_clean)</code></pre>
+<pre><code>## # A tibble: 6 × 5
+##   state   ship           sunk_date     latitude longitude
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;chr&gt;            &lt;dbl&gt;     &lt;dbl&gt;
+## 1 Alabama Eliza Battle   1 March 1858      32.2     -88.0
+## 2 Alabama CSS Huntsville 12 April 1865     30.8     -88.0
+## 3 Alabama USS Philippi   5 August 1864     30.4     -88.0
+## 4 Alabama CSS Phoenix    7 August 1864     30.6     -88.0
+## 5 Alabama USS Tecumseh   5 August 1864     30.2     -88.0
+## 6 Alabama CSS Tuscaloosa 12 April 1865     30.8     -88.0</code></pre>
+<p>Shipwrecks rarely occur in isolation from navigational
+infrastructure. Lighthouses, buoys, and other coastal aids to navigation
+were historically constructed to reduce maritime hazards and guide
+vessels through dangerous waters. Because this project exists within a
+broader data portfolio, we can incorporate the lighthouse dataset
+generated in the previous analysis “Data on the Rocks: Touring U.S.
+Lighthouses”</p>
+<p>Rather than rerunning the entire lighthouse scraping pipeline, the
+cleaned lighthouse dataset was saved as a local .RDS file. This file
+preserves the dataset exactly as it was produced - including column
+types and spatial coordinates - and allows it to be loaded instantly
+here.</p>
+<pre class="r"><code># Load previously saved lighthouse dataset
+lighthouses_clean &lt;- readRDS(&quot;data/lighthouses_clean.rds&quot;)</code></pre>
+<div id="sailing-blind-wrecks-and-their-nearest-light"
+class="section level3">
+<h3>Sailing Blind?: Wrecks and Their Nearest Light</h3>
+<p>With both shipwreck and lighthouse datasets available, we can begin
+exploring their spatial relationship. One intuitive question is whether
+shipwrecks tend to occur near existing navigational aids or in areas
+where lighthouses are sparse. To explore this, we calculate the
+geographic distance between each recorded shipwreck and the nearest
+lighthouse located within the same state. While many wrecks are
+attributed to specific states based on their proximity to the shoreline,
+“high seas” wrecks lost far from land are typically attributed to states
+based on their port of origin, intended destination, or the nearest
+naval base.</p>
+<p>Because both datasets contain latitude and longitude coordinates, we
+treat them as spatial point datasets. Using great-circle distance
+calculations - which account for the curvature of the Earth - we compute
+the distance from every shipwreck location to lighthouse locations
+within its respective state to identify the nearest one. Limiting this
+search by state helps ensure the analysis reflects the relationship
+between local maritime disasters and the regional infrastructure
+intended to mitigate them.</p>
+<pre class="r"><code># ---- 1. Clean lighthouse data ----
+lighthouses_valid &lt;- lighthouses_clean %&gt;%
+  select(state, lon, lat, name, year_first_lit) %&gt;% 
+  drop_na(lon, lat, year_first_lit, state) %&gt;%
+  mutate(
+    lon = as.numeric(lon),
+    lat = as.numeric(lat),
+    year_first_lit = as.numeric(str_extract(year_first_lit, &quot;\\d{4}&quot;)),
+    state = str_trim(state)
+  )
+
+# ---- 2. Extract sunk_year for all shipwrecks ----
+shipwrecks_clean &lt;- shipwrecks_clean %&gt;%
+  mutate(
+    sunk_year = as.numeric(str_extract(sunk_date, &quot;\\d{4}&quot;)),
+    longitude = as.numeric(longitude),
+    latitude = as.numeric(latitude),
+    state = str_trim(state)
+  )
+
+# ---- 3. Regional calculation ----
+shipwrecks_with_data &lt;- map_df(unique(shipwrecks_clean$state), function(s) {
+  
+  s_wrecks &lt;- shipwrecks_clean %&gt;% filter(state == s, !is.na(latitude))
+  s_lights &lt;- lighthouses_valid %&gt;% filter(state == s)
+  
+  # If no lighthouses found in this state, create empty columns
+  if(nrow(s_lights) == 0) {
+    return(s_wrecks %&gt;% mutate(
+      nearest_lighthouse_km = NA_real_,
+      nearest_lighthouse_name = NA_character_,
+      nearest_lighthouse_year_lit = NA_real_,
+      light_lon = NA_real_,
+      light_lat = NA_real_,
+      lighthouse_active = NA
+    ))
+  }
+  
+  if(nrow(s_wrecks) == 0) return(NULL)
+  
+  w_mat &lt;- as.matrix(s_wrecks %&gt;% select(longitude, latitude))
+  l_mat &lt;- as.matrix(s_lights %&gt;% select(lon, lat))
+  
+  dist_matrix &lt;- geosphere::distm(w_mat, l_mat)
+  nearest_idx &lt;- apply(dist_matrix, 1, which.min)
+  
+  s_wrecks %&gt;%
+    mutate(
+      nearest_lighthouse_km = apply(dist_matrix, 1, min) / 1000,
+      nearest_lighthouse_name = s_lights$name[nearest_idx],
+      nearest_lighthouse_year_lit = s_lights$year_first_lit[nearest_idx],
+      light_lon = s_lights$lon[nearest_idx],
+      light_lat = s_lights$lat[nearest_idx],
+      lighthouse_active = sunk_year &gt;= nearest_lighthouse_year_lit
+    )
+})
+
+shipwrecks_clean &lt;- shipwrecks_with_data
+
+# ---- 4. Preview ----
+shipwrecks_clean %&gt;%
+  filter(lighthouse_active == TRUE) %&gt;%
+  select(ship, state, sunk_year, nearest_lighthouse_name, nearest_lighthouse_km) %&gt;%
+  arrange(nearest_lighthouse_km) %&gt;%
+  head(20)</code></pre>
+<pre><code>## # A tibble: 20 × 5
+##    ship             state sunk_year nearest_lighthouse_n…¹ nearest_lighthouse_km
+##    &lt;chr&gt;            &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;                                  &lt;dbl&gt;
+##  1 Annie C. Maguire Maine      1886 Portland Head Light                   0.0309
+##  2 Arratoon Apcar   Flor…      1878 Fowey Rocks Light                     0.0385
+##  3 A.E. Vickery     New …      1889 Rock Island Light                     0.223 
+##  4 USS Essex        Minn…      1931 Minnesota Point Light                 0.372 
+##  5 USS Tecumseh     Alab…      1864 Mobile Point RangeRea…                0.457 
+##  6 City of Taunton  Mass…      1930 Borden Flats Light                    0.724 
+##  7 Emidio           Cali…      1941 Battery Point Light                   0.895 
+##  8 Potrero del Lla… Flor…      1942 Fowey Rocks Light                     0.906 
+##  9 USS Atlanta      Nort…      1869 Cape Hatteras Light                   0.923 
+## 10 City of Chester  Cali…      1888 Fort Point Light                      1.01  
+## 11 Herman Winter    Mass…      1944 Gay Head Light                        1.03  
+## 12 Carthaginian II  Hawa…      2005 Lahaina Light                         1.11  
+## 13 USS Keokuk       Sout…      1863 Morris Island Light                   1.12  
+## 14 Essayons         Minn…      2009 Duluth South Breakwat…                1.17  
+## 15 City of Salisbu… Mass…      1938 The Graves Light                      1.26  
+## 16 Chelsea          Mass…      1957 Cape Ann Light Statio…                1.29  
+## 17 Thomas Wilson    Minn…      1902 Duluth South Breakwat…                1.43  
+## 18 Home             Nort…      1837 Cape Hatteras Light                   1.43  
+## 19 Ada K. Damon     Mass…      1909 Ipswich Rear Range Li…                1.51  
+## 20 Dixie Sword      Mass…      1942 Monomoy Point Light                   1.54  
+## # ℹ abbreviated name: ¹​nearest_lighthouse_name</code></pre>
+<p>While the full dataset contains hundreds of wreck–lighthouse distance
+calculations, interpreting the overall distribution from raw numbers
+alone can be difficult. To highlight the most extreme spatial
+relationships, the code first filters the dataset to coastal and Great
+Lakes states where lighthouse infrastructure is most relevant.
+Importantly, only shipwrecks that occurred after the nearest lighthouse
+was built are included - wrecks predating a lighthouse are excluded,
+since pairing them with a not-yet-existent navigational aid would be
+meaningless. The remaining shipwrecks are ranked by their calculated
+distance to the nearest lighthouse, and the ten closest and ten most
+distant pairs are extracted. These twenty observations are then
+visualized in a dumbbell-style plot, where each row connects a shipwreck
+to its nearest lighthouse within the same state.</p>
+<pre class="r"><code># ---- 1. Define coastal &amp; Great Lakes states ----
+coastal_gl_states &lt;- c(
+  &quot;Alabama&quot;, &quot;Alaska&quot;, &quot;California&quot;, &quot;Connecticut&quot;, &quot;Delaware&quot;, &quot;Florida&quot;, 
+  &quot;Georgia&quot;, &quot;Hawaii&quot;, &quot;Louisiana&quot;, &quot;Maine&quot;, &quot;Maryland&quot;, &quot;Massachusetts&quot;, 
+  &quot;Mississippi&quot;, &quot;New Hampshire&quot;, &quot;New Jersey&quot;, &quot;New York&quot;, &quot;North Carolina&quot;, 
+  &quot;Oregon&quot;, &quot;Rhode Island&quot;, &quot;South Carolina&quot;, &quot;Texas&quot;, &quot;Virginia&quot;, &quot;Washington&quot;,
+  &quot;Illinois&quot;, &quot;Indiana&quot;, &quot;Michigan&quot;, &quot;Minnesota&quot;, &quot;Ohio&quot;, &quot;Pennsylvania&quot;, &quot;Wisconsin&quot;
+)
+
+# ---- 2. Filter and process ----
+plot_ready_data &lt;- shipwrecks_clean %&gt;%
+  filter(state %in% coastal_gl_states) %&gt;%
+  filter(!(ship == &quot;Oregon&quot; &amp; state == &quot;New Hampshire&quot;)) %&gt;%
+  filter(!is.na(nearest_lighthouse_km)) %&gt;%
+  filter(lighthouse_active == TRUE) %&gt;%    # &lt;-- Exclude wrecks predating nearest lighthouse
+  mutate(
+    ship_label = paste0(ship, &quot; (&quot;, state, &quot;)\nNearest Lighthouse: &quot;, nearest_lighthouse_name)
+  )
+
+# ---- 3. Slicing function (Top 10 Near &amp; Top 10 Far) ----
+get_extremes &lt;- function(df) {
+  df_sorted &lt;- df %&gt;% arrange(nearest_lighthouse_km)
+  
+  # Extract the extremes
+  near &lt;- head(df_sorted, 10) %&gt;% 
+    mutate(grouping = &quot;10 Closest Pairs&quot;)
+  
+  far  &lt;- tail(df_sorted, 10) %&gt;% 
+    mutate(grouping = &quot;10 Furthest Pairs&quot;)
+  
+  # Combine and reorder
+  bind_rows(near, far) %&gt;%
+    mutate(ship_label = fct_reorder(ship_label, nearest_lighthouse_km))
+}
+
+plot_data_final &lt;- get_extremes(plot_ready_data)</code></pre>
+<p>The resulting visualization shows how widely these distances can
+vary. In the closest cases, shipwrecks occur next to navigational aids.
+For example, the Annie C. Maguire, a British three-masted barque sailing
+from Buenos Aires, famously ran aground on the rocks at Portland Head
+Light, Cape Elizabeth, Maine, on 24 December 1886. Another
+‘zero-distance pairing, the SS Arratoon Apcar, sank under similar
+circumstances: the iron-hulled sail-and-steam merchant ship was wrecked
+in shallow water at Fowey Rocks Light, Florida, in 1878. The vessels’
+proximity to the lighthouses illustrates how even the most prominent
+coastal beacons often stood watch over disasters they were powerless to
+prevent.</p>
+<p>At the opposite extreme, the wreck of the North American initially
+appeared as a major outlier due to incorrect coordinates in the source
+data and has been removed from this analysis. The next furthest pairing
+is the USS Dixon, an L. Y. Spear-class submarine tender that served the
+U.S. Navy from 1971 to 1995. Notably, Dixon carried the first female
+officers to serve aboard U.S. Navy ships in November 1978 and was later
+sunk as a target over 580 km southeast of Charleston, South Carolina,
+with her nearest lighthouse, Georgetown Light, 537.5 kilometers
+away.</p>
+<p>By contrast, the SS Vestris, a 1912 steam ocean liner operating
+between New York and the River Plate, foundered in a storm on 12
+November 1928 about 300 km off Hampton Roads, Virginia. Her nearest
+lighthouse, Assateague Light, lies 439.2 kilometers away. Over 100 lives
+were lost when the vessel sank in heavy seas, and her wreck now rests
+approximately 2 kilometers beneath the North Atlantic. Together, the USS
+Dixon and the SS Vestris show how offshore losses - whether deliberate
+or accidental - can occur far beyond the reach of coastal navigational
+aids.</p>
+<pre class="r"><code># Exclude North American due to incorrect coordinates
+plot_data_to_plot &lt;- plot_data_final %&gt;%
+  filter(ship != &quot;North American&quot;)
+
+ggplot(plot_data_to_plot) +
+  theme_minimal() +
+  theme(
+    # Set ocean aesthetic
+    plot.background = element_rect(fill = &quot;#050a14&quot;, color = NA),
+    panel.grid.major.y = element_blank(),
+    panel.grid.major.x = element_line(color = &quot;#121d2b&quot;),
+    panel.grid.minor = element_blank(),
+    
+    # Text and titles
+    plot.title = element_text(color = &quot;white&quot;, size = 22, face = &quot;bold&quot;, hjust = 0.5, margin = margin(b=5, t=10)),
+    axis.text.y = element_text(color = &quot;white&quot;, size = 9, lineheight = 1.1, hjust = 1),
+    axis.text.x = element_text(color = &quot;gray70&quot;),
+    
+    # Legend and facets
+    legend.position = &quot;bottom&quot;,
+    legend.title = element_text(color = &quot;white&quot;, size = 10, vjust = 0.8),
+    legend.text = element_text(color = &quot;white&quot;, size = 9),
+    strip.background = element_rect(fill = &quot;#121d2b&quot;),
+    strip.text = element_text(color = &quot;#ffc300&quot;, face = &quot;bold&quot;, size = 13)
+  ) +
+  
+  # ---- 1. Connecting bar (using nearest_lighthouse_km) ----
+  geom_segment(aes(x = 0, xend = nearest_lighthouse_km, y = ship_label, yend = ship_label, color = nearest_lighthouse_km), 
+               linewidth = 4, alpha = 0.3) +
+  
+  # ---- 2. Points and text ----
+  geom_point(aes(x = 0, y = ship_label), color = &quot;white&quot;, size = 3) +
+  geom_point(aes(x = nearest_lighthouse_km, y = ship_label, color = nearest_lighthouse_km), size = 5.5) +
+  geom_text(aes(x = nearest_lighthouse_km, y = ship_label, label = paste0(round(nearest_lighthouse_km, 1), &quot; km&quot;)), 
+            color = &quot;white&quot;, hjust = -0.2, size = 3.5, fontface = &quot;bold&quot;) +
+  
+  scale_color_viridis_c(
+    option = &quot;plasma&quot;, 
+    name = &quot;Distance from Wreck to Lighthouse (km)&quot;,
+    guide = guide_colorbar(barwidth = 20, barheight = 0.6, title.position = &quot;top&quot;, title.hjust = 0.5)
+  ) +
+  
+  scale_x_continuous(labels = scales::unit_format(unit = &quot;km&quot;), expand = expansion(mult = c(0.02, 0.25))) +
+  facet_wrap(~grouping, scales = &quot;free_y&quot;, ncol = 1) +
+  
+  labs(
+    title = &quot;Sailing Blind?: Wrecks and Their Nearest Light&quot;,
+    x = &quot;Distance (km)&quot;,
+    y = &quot;&quot;
+  )</code></pre>
+<p><img src="p03_files/figure-html/plot_distances_dumbbell-1.png" width="1344" /></p>
+</div>
+<div id="dangerous-waters-heatmaps-of-shipwrecks-and-lighthouses"
+class="section level3">
+<h3>Dangerous Waters: Heatmaps of Shipwrecks and Lighthouses</h3>
+<p>This data preparation stage standardizes the coordinate systems of
+the shipwrecks_clean and lighthouses_valid datasets to create a unified
+spatial record of U.S. maritime hazards and aids to navigation. By
+filtering for the thirty states with significant coastal or Great Lakes
+access, the analysis captures the geographic distribution of maritime
+disasters over three centuries.</p>
+<p>While the primary focus remains on coastal waters, coordinates
+falling within the continental interior have been retained to capture
+riverine disasters associated with 19th-century westward expansion. Many
+of these sites represent shallow-draft steamers and flatboats that
+foundered on the Missouri, Mississippi, and Columbia Rivers. Unlike the
+open coastline, these inland waterways lacked a centralized network of
+permanent lighthouses, leaving vessels vulnerable to shifting currents,
+hidden sandbars, and collisions in low-visibility conditions.</p>
+<pre class="r"><code># ---- 1. Define the maritime states ----
+coastal_gl_states &lt;- c(
+  &quot;Alabama&quot;, &quot;Alaska&quot;, &quot;California&quot;, &quot;Connecticut&quot;, &quot;Delaware&quot;, &quot;Florida&quot;, 
+  &quot;Georgia&quot;, &quot;Hawaii&quot;, &quot;Louisiana&quot;, &quot;Maine&quot;, &quot;Maryland&quot;, &quot;Massachusetts&quot;, 
+  &quot;Mississippi&quot;, &quot;New Hampshire&quot;, &quot;New Jersey&quot;, &quot;New York&quot;, &quot;North Carolina&quot;, 
+  &quot;Oregon&quot;, &quot;Rhode Island&quot;, &quot;South Carolina&quot;, &quot;Texas&quot;, &quot;Virginia&quot;, &quot;Washington&quot;,
+  &quot;Illinois&quot;, &quot;Indiana&quot;, &quot;Michigan&quot;, &quot;Minnesota&quot;, &quot;Ohio&quot;, &quot;Pennsylvania&quot;, &quot;Wisconsin&quot;
+)
+
+# ---- 2. Process wreck data (Source: shipwrecks_clean) ----
+# Rename &#39;latitude&#39; and &#39;longitude&#39; to &#39;lat&#39; and &#39;lng&#39;
+wreck_coords &lt;- shipwrecks_clean %&gt;%
+  filter(state %in% coastal_gl_states) %&gt;%
+  select(lat = latitude, lng = longitude) %&gt;% 
+  drop_na()
+
+# ---- 3. Process Lighthouse Data (Source: lighthouses_valid) ----
+# Rename &#39;lat&#39; and &#39;lon&#39; to &#39;lat&#39; and &#39;lng&#39;
+light_coords &lt;- lighthouses_valid %&gt;%
+  filter(state %in% coastal_gl_states) %&gt;%
+  select(lat = lat, lng = lon) %&gt;%
+  drop_na()</code></pre>
+<p>Mapping shipwreck density against lighthouse locations reveals
+distinct regional patterns in maritime risk and the corresponding
+federal response. The Northeast and Mid-Atlantic coasts, from Maine
+through the Chesapeake Bay, show a high concentration of wrecks
+alongside a dense lighthouse network, reflecting the intensity of
+colonial-era trade and the hazards of a jagged, rock-strewn coastline.
+Further south, a significant cluster of wrecks defines the Outer Banks
+of North Carolina - often termed the ‘Graveyard of the Atlantic.’ Here,
+the collision of the warm Gulf Stream and the cold Labrador Current
+creates volatile weather and shifting sandbars, such as Diamond Shoals,
+which extended far enough offshore to trap vessels even when they
+attempted to give the coast a wide berth. Similarly, the Florida Keys
+appear as a high-density arc of disasters, where the narrow, reef-lined
+Straits of Florida required a string of offshore lights to protect
+vessels navigating the Gulf Stream.</p>
+<p>Regional variation is evident when comparing coasts: the Pacific
+Coast exhibits a more dispersed smattering of wreck sites, likely due to
+a steeper continental shelf and fewer natural harbors compared to the
+sprawling, shallow Atlantic shelf. n the Great Lakes, high-density
+clusters appear at narrow navigational choke points, such as the
+approaches to Lake Erie, and in particularly hazardous areas like the
+Apostle Islands region of Lake Superior, where rocky shoals, sudden
+storms, and strong currents have historically posed serious risks to
+vessels. Finally, the presence of wreck clusters in landlocked regions -
+such as the Missouri River valley in Nebraska or the Ohio River -
+documents the aformentioned perils of internal navigation. These
+“ghosts” of the riverine frontier mark the path of inland development
+where river hazards and boiler explosions claimed vessels far beyond the
+reach of traditional coastal beacons.</p>
+<pre class="r"><code># ---- 1. Shipwreck heat map (The &quot;Risk&quot;) ----
+create_shipwreck_heat_map &lt;- function(wrecks, x_lim, y_lim, title_text) {
+  ggplot() +
+    theme_void() + 
+    theme(
+      panel.background = element_rect(fill = &quot;#02050a&quot;, color = NA), 
+      plot.background = element_rect(fill = &quot;#02050a&quot;, color = NA),  
+      legend.background = element_rect(fill = &quot;#02050a&quot;, color = NA),
+      plot.title = element_text(color = &quot;white&quot;, size = 22, face = &quot;bold&quot;, hjust = 0.5, margin = margin(t=20)),
+      plot.subtitle = element_text(color = &quot;darkgoldenrod1&quot;, size = 11, hjust = 0.5, margin = margin(b=10)),
+      plot.margin = margin(0, 0, 0, 0) 
+    ) +
+    
+    # --- Heat layer ---
+    stat_density_2d(data = wrecks, 
+                    aes(x = longitude, y = latitude, fill = after_stat(level)), 
+                    geom = &quot;polygon&quot;, 
+                    alpha = 0.5,      
+                    bins = 50,        
+                    n = 200,          # Higher grid resolution stops &quot;scissor&quot; edges
+                    h = c(2, 2),      # Manual bandwidth smoothing
+                    colour = NA) +    
+    
+    # ---- Point layer ----
+    geom_point(data = wrecks, 
+               aes(x = longitude, y = latitude), 
+               color = &quot;white&quot;,     
+               size = 0.3, 
+               alpha = 0.6) +
+    
+    # ---- Borders layer ----
+    annotation_borders(&quot;state&quot;, 
+                       fill = NA, 
+                       color = &quot;cyan3&quot;, 
+                       linewidth = 0.4) + 
+    
+    # ---- Scales &amp; coordinates ----
+    scale_fill_viridis_c(option = &quot;plasma&quot;, guide = &quot;none&quot;) +
+    coord_sf(xlim = x_lim, ylim = y_lim, 
+             crs = 4326, 
+             expand = FALSE, 
+             clip = &quot;on&quot;) + 
+    
+    labs(title = title_text, subtitle = &quot;U.S. Shipwreck Hotspots&quot;)
+}
+
+# ---- 2. Lighthouse heat map (The &quot;Response&quot;) ----
+create_lighthouse_heat_map &lt;- function(lights, x_lim, y_lim, title_text) {
+  ggplot() +
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = &quot;#02050a&quot;, color = NA), 
+      plot.background = element_rect(fill = &quot;#02050a&quot;, color = NA),  
+      plot.title = element_text(color = &quot;white&quot;, size = 22, face = &quot;bold&quot;, hjust = 0.5, margin = margin(t=20)),
+      plot.subtitle = element_text(color = &quot;darkgoldenrod1&quot;, size = 11, hjust = 0.5, margin = margin(b=10)),
+      plot.margin = margin(0, 0, 0, 0)
+    ) +
+    
+    # ---- Heat layer ----
+    stat_density_2d(data = lights, 
+                    aes(x = lon, y = lat, fill = after_stat(level)), 
+                    geom = &quot;polygon&quot;, 
+                    alpha = 0.5, 
+                    bins = 40, 
+                    n = 200,          
+                    h = c(2, 2),      
+                    colour = NA) + 
+    
+    # ---- Point layer ----
+    geom_point(data = lights, 
+               aes(x = lon, y = lat), 
+               color = &quot;white&quot;, 
+               size = 0.3, 
+               alpha = 0.6) + 
+    
+    # ---- Borders layer ----
+    annotation_borders(&quot;state&quot;, 
+                       fill = NA, 
+                       color = &quot;cyan3&quot;, 
+                       linewidth = 0.4) + 
+    
+    # ---- Scales &amp; coordinates ----
+    scale_fill_viridis_c(option = &quot;viridis&quot;, guide = &quot;none&quot;) +
+    coord_sf(xlim = x_lim, ylim = y_lim, 
+             crs = 4326, 
+             expand = FALSE, 
+             clip = &quot;on&quot;) + 
+    
+    labs(title = title_text, subtitle = &quot;U.S. Lighthouse Concentrations&quot;)
+}
+
+# ---- 3. Display ----
+# Fit to the Continental U.S. + Great Lakes
+shared_x &lt;- c(-128, -64) # Olympic Peninsula to Maine
+shared_y &lt;- c(23, 51)    # Florida Keys to Lake Superior
+
+# Execute shipwreck plot
+p_wrecks &lt;- create_shipwreck_heat_map(shipwrecks_clean, shared_x, shared_y, &quot;The Risk&quot;)
+print(p_wrecks)</code></pre>
+<p><img src="p03_files/figure-html/plot_heatmap-1.png" width="4200" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Execute lighthouse plot
+p_lights &lt;- create_lighthouse_heat_map(lighthouses_valid, shared_x, shared_y, &quot;The Response&quot;)
+print(p_lights)</code></pre>
+<p><img src="p03_files/figure-html/plot_heatmap-2.png" width="4200" style="display: block; margin: auto;" /></p>
+</div>
+<div id="tactical-mismatch-shipwreck-sites-vs.-lighthouse-coverage"
+class="section level3">
+<h3>Tactical Mismatch?: Shipwreck Sites vs. Lighthouse Coverage</h3>
+<p>A comparative analysis of these heatmaps reveals a striking
+divergence in how navigational infrastructure aligns with maritime risk.
+In New England and the Mid-Atlantic, the dense cluster of shipwrecks is
+met by an equally robust concentration of lighthouses, suggesting a
+historical ‘Response’ that scaled alongside the ‘Risk’ of early American
+commerce. However, this symmetry breaks down as we move south toward the
+Outer Banks of North Carolina. Despite the presence of iconic beacons
+like Cape Hatteras and Ocracoke, the sheer volume of shipwrecks in this
+region appears to far exceed the local lighthouse availability. This
+spatial mismatch reveals the exceptional dangers of the Graveyard of the
+Atlantic, where shifting shoals and colliding currents proved too
+volatile for even a dense network of navigational aids to fully
+mitigate.</p>
+<pre class="r"><code>ggplot() +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = &quot;#02050a&quot;, color = NA), # Ocean interior
+    plot.background = element_rect(fill = &quot;#02050a&quot;, color = NA),  # Match outer bars
+    plot.title = element_text(color = &quot;white&quot;, size = 20, face = &quot;bold&quot;, hjust = 0.5, margin = margin(t=20)),
+    plot.subtitle = element_text(color = &quot;darkgoldenrod1&quot;, size = 16, hjust = 0.5, margin = margin(b=20)),
+    plot.margin = margin(10, 10, 10, 10) # Prevent text clipping at the edges
+  ) +
+  
+  # ---- 1. The &quot;Risk&quot;: Shipwrecks ----
+  stat_density_2d(data = shipwrecks_clean, 
+                  aes(x = longitude, y = latitude, color = after_stat(level)), 
+                  geom = &quot;density_2d&quot;, # Contour lines only
+                  linewidth = 0.4, 
+                  alpha = 0.7, 
+                  bins = 25, 
+                  n = 200, 
+                  h = c(2,2)) +
+  scale_color_gradient(low = &quot;firebrick3&quot;, high = &quot;firebrick1&quot;, guide = &quot;none&quot;) + 
+  
+  new_scale_color() + # Reset for the next density layer
+  
+  # ---- 2. The &quot;Response&quot;: Lighthouses ----
+  stat_density_2d(data = lighthouses_valid, 
+                  aes(x = lon, y = lat, color = after_stat(level)), 
+                  geom = &quot;density_2d&quot;, # Contour lines only
+                  linewidth = 0.4, 
+                  alpha = 0.7, 
+                  bins = 20, 
+                  n = 200, 
+                  h = c(2,2)) +
+  scale_color_gradient(low = &quot;darkolivegreen3&quot;, high = &quot;darkolivegreen1&quot;, guide = &quot;none&quot;) +
+  
+  # ---- 3. Reference borders ----
+  annotation_borders(&quot;state&quot;, 
+                     fill = NA, 
+                     color = &quot;white&quot;, 
+                     linewidth = 0.2, 
+                     alpha = 0.1) +
+  
+  # ---- 4. Final coordinates &amp; labels ----
+  coord_sf(xlim = shared_x, ylim = shared_y, 
+           crs = 4326, 
+           expand = FALSE, 
+           clip = &quot;on&quot;) +
+  
+  labs(
+    title = &quot;Tactical Mismatch?: Shipreck Sites vs. Lighthouse Coverage&quot;, 
+    subtitle = &quot;Red: Shipwreck Density | Green: Lighthouse Concentration&quot;
+  )</code></pre>
+<p><img src="p03_files/figure-html/tactical_mismatch_map-1.png" width="4200" style="display: block; margin: auto;" /></p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
