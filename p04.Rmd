@@ -1,5 +1,87 @@
 ---
-title: "Portfolio 4"
+title: "When Systems Fail: The Dragon Kings of Human-Made Disasters"
+name: Verity Elliott
+output: html_document
 ---
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+Modern societies depend on complex technological systems: industrial plants, transportation networks, large buildings, and nuclear infrastructure. Most of the time these systems function safely, and when failures occur they tend to be limited in scale. Machines break, accidents occur, and small structural failures happen without causing widespread catastrophe. However, history also records rare but devastating disasters: chemical plants releasing toxic gas, nuclear reactors suffering catastrophic meltdowns, or large buildings collapsing with massive loss of life. Events such as the Chernobyl disaster and the Rana Plaza collapse demonstrate how failures in complex systems can produce outcomes far beyond ordinary accidents.
+
+In many natural and technological systems, the sizes of events follow what statisticians call a heavy-tailed distribution. In such distributions, small events are common while large events are rare but still possible. Earthquakes, financial losses, and infrastructure failures often exhibit this pattern. One common mathematical description of such behavior is the power-law distribution, in which the probability of an event decreases slowly as its size increases. This means that extremely large events, while rare, are more likely than they would be in a normal distribution. However, physicist Didier Sornette proposed that some extreme events may not simply be the largest outcomes of the same statistical process. Instead, they may arise from different underlying mechanisms, such as cascading failures, positive feedback loops, or systemic instability. These extraordinary events are known as dragon kings, a term intended to describe extreme outliers that dominate the rest of the distribution.
+
+This project explores the largest structural collapses as dragon-king events. Using data on building and structure collapses compiled from Wikipedia, we analyze the distribution of collapse severity and identify the most catastrophic events as clear outliers from ordinary failures. 
+
+```{r load-packages, warning = FALSE, message=FALSE}
+# Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(httr)
+  library(stringr)
+  library(janitor)
+})
+```
+
+The structural collapse data are contained on a single Wikipedia page, organized into multiple tables corresponding to different historical periods. To build a comprehensive dataset, we first download the page and extract all tables with the “wikitable” class. Each table is parsed into a structured dataframe, and column names are standardized before combining all tables into a master dataset. We then clean the data by splitting the location column into city and country, extracting numeric values from the casualties column, and handling inconsistent year formats, including approximate ranges and BCE dates. Text fields are cleaned of extra whitespace and other artifacts. The resulting dataset provides consistent, analysis-ready columns for year, structure name, city, country, type of structure, and number of casualties.
+
+```{r retrieve_data}
+### ---- 1. Function to scrape tables ----
+scrape_collapse_tables <- function(url) {
+  
+  page <- tryCatch({
+    GET(url, user_agent("Mozilla/5.0")) %>% read_html()
+  }, error = function(e) return(NULL))
+  
+  if (is.null(page)) return(NULL)
+  
+  tables <- page %>% html_elements("table.wikitable")
+  if (length(tables) == 0) return(NULL)
+  
+  # Scrape and combine tables
+  page_data <- map_df(seq_along(tables), function(i){
+    df <- tables[[i]] %>% html_table(fill = TRUE)
+    df <- df %>%
+      janitor::clean_names() %>%
+      mutate(across(everything(), as.character))
+    df
+  })
+  
+  # Split location into city and country
+  page_data <- page_data %>%
+    mutate(location = str_squish(location)) %>%
+    separate(location, into = c("city", "country"), sep = ",\\s*", extra = "merge", fill = "right") %>%
+    mutate(
+      city = str_squish(city),
+      country = str_squish(country)
+    )
+  
+  # Clean casualties column
+  page_data <- page_data %>%
+    mutate(
+      casualties = str_extract(casualties, "[0-9,]+"),
+      casualties = as.numeric(str_remove_all(casualties, ","))
+    )
+  
+  # Standardize text fields
+  page_data <- page_data %>%
+    mutate(
+      structure = str_squish(structure),
+      city = str_squish(city),
+      country = str_squish(country),
+      type = str_squish(type)
+    )
+  
+  # Keep only desired columns
+  page_data <- page_data %>%
+    select(year, structure, city, country, type, casualties)
+  
+  return(page_data)
+}
+
+### ---- 2. Scrape the Wikipedia page ----
+url <- "https://en.wikipedia.org/wiki/List_of_building_and_structure_collapses"
+collapse_clean <- scrape_collapse_tables(url)
+
+# Preview results
+glimpse(collapse_clean)
+```
+
