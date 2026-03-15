@@ -18,13 +18,14 @@ suppressMessages({
   library(httr)
   library(stringr)
   library(janitor)
+  library(ggplot2)
 })
 ```
 
 The structural collapse data are contained on a single Wikipedia page, organized into multiple tables corresponding to different historical periods. To build a comprehensive dataset, we first download the page and extract all tables with the “wikitable” class. Each table is parsed into a structured dataframe, and column names are standardized before combining all tables into a master dataset. We then clean the data by splitting the location column into city and country, extracting numeric values from the casualties column, and handling inconsistent year formats, including approximate ranges and BCE dates. Text fields are cleaned of extra whitespace and other artifacts. The resulting dataset provides consistent, analysis-ready columns for year, structure name, city, country, type of structure, and number of casualties.
 
 ```{r retrieve_data}
-### ---- 1. Function to scrape tables ----
+# ---- 1. Function to scrape tables ----
 scrape_collapse_tables <- function(url) {
   
   page <- tryCatch({
@@ -77,11 +78,140 @@ scrape_collapse_tables <- function(url) {
   return(page_data)
 }
 
-### ---- 2. Scrape the Wikipedia page ----
+# ---- 2. Scrape the Wikipedia page ----
 url <- "https://en.wikipedia.org/wiki/List_of_building_and_structure_collapses"
 collapse_clean <- scrape_collapse_tables(url)
 
 # Preview results
 glimpse(collapse_clean)
 ```
+### 
 
+The dataset includes 314 structural collapse events. Most events are small, with a median of 14 casualties, but a few extreme events dominate the distribution. The largest collapse, the Banqiao and Shimantan Dams in China (1959), caused 85,600 casualties, more than 6,000 times the median. Other notable outliers include the Fidenae amphitheatre (20,000) and Circus Maximus upper tier (13,000) collapses in Roman Italy, and modern tragedies such as the Rana Plaza (1,134) collapse in Bangladesh.
+
+```{r summary_statistics}
+# Basic summary statistics
+summary_stats <- collapse_plot %>%
+  summarise(
+    total_events = n(),
+    max_casualties = max(casualties),
+    median_casualties = median(casualties),
+    mean_casualties = mean(casualties)
+  )
+
+summary_stats
+
+# Top 10 events
+top10 <- collapse_plot %>%
+  slice_max(casualties, n = 10) %>%
+  select(structure, city, country, casualties)
+
+top10
+
+# Ratio of largest to median event
+ratio <- collapse_plot %>%
+  summarise(
+    ratio = max(casualties) / median(casualties)
+  )
+
+ratio
+```
+
+The log–log rank–size plot is particularly useful for analyzing structural collapse severity because it transforms the wide range of casualties onto a scale where both small and extremely large events can be compared visually. In a heavy-tailed distribution, most events cluster at the lower end, while the largest events form the upper tail. Plotting rank versus casualties on logarithmic axes makes it easier to see whether these extreme events follow the same statistical pattern as ordinary collapses or stand out as true outliers. Events that depart sharply from the trend line, such as the Banqiao and Shimantan Dam or Fidenae amphitheatre collapses, may be considered dragon-king events, reflecting extraordinary circumstances or mechanisms that generate disproportionately large consequences.
+
+```{r severity_histogram}
+# Identify top extreme events
+top_events <- collapse_plot %>%
+  slice_max(casualties, n = 5) %>%
+  mutate(
+    clean_name = str_remove_all(structure, regex("collapse", ignore_case = TRUE)),
+    clean_name = str_squish(clean_name),
+    legend_label = paste0(
+      clean_name,
+      " (",
+      ifelse(as.numeric(year) < 500,
+             paste0(year, " AD"),
+             year),
+      ")"
+    )
+  )
+
+# Create grouping variable
+collapse_plot2 <- collapse_plot %>%
+  left_join(
+    top_events %>% select(structure, legend_label),
+    by = "structure"
+  ) %>%
+  mutate(
+    event_group = ifelse(is.na(legend_label), "Other Events", legend_label)
+  )
+
+# Order legend so "Other Events" appears last
+legend_levels <- c(top_events$legend_label, "Other Events")
+
+collapse_plot2$event_group <- factor(
+  collapse_plot2$event_group,
+  levels = legend_levels
+)
+
+# Manual color assignment
+extreme_colors <- c(
+  "firebrick2",
+  "darkorange2",
+  "olivedrab3",
+  "deepskyblue3",
+  "orchid3"
+)
+
+names(extreme_colors) <- top_events$legend_label
+
+color_values <- c(extreme_colors, "Other Events" = "gray75")
+
+# Plot
+ggplot(collapse_plot2, aes(rank, casualties)) +
+  
+  geom_point(
+    aes(color = event_group, size = event_group),
+    alpha = 0.8
+  ) +
+  
+  scale_x_log10() +
+  scale_y_log10() +
+  
+  scale_color_manual(values = color_values) +
+  
+  scale_size_manual(
+    values = c(
+      setNames(rep(3.5, 5), top_events$legend_label),
+      "Other Events" = 1.5
+    ),
+    guide = "none"
+  ) +
+  
+  geom_smooth(
+    data = collapse_plot,
+    aes(rank, casualties),
+    method = "lm",
+    formula = y ~ x,
+    se = FALSE,
+    color = "black",
+    linetype = "dashed"
+  ) +
+  
+  labs(
+    x = "Rank of Structural Collapse (1 = largest)",
+    y = "Number of Casualties (log scale)",
+    color = "Extreme Deviations",
+    title = "Severity Distribution of Structural Collapses (Log-Log)",
+    subtitle = "Extreme deviations from the power-law trend identified"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.subtitle = element_text(hjust = 0.5),
+    axis.title = element_text(size = 12),
+    legend.position = "right",
+    legend.title.align = 0.5
+  )
+```
