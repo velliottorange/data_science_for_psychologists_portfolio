@@ -316,10 +316,10 @@ suppressMessages({
   library(tidyr)
 })</code></pre>
 <p>The XP table is publicly available on the RuneScape Wiki. Instead of
-entering values manually or relying on secondary sources (like a noob),
-we pull the data directly from the site. This approach keeps the
-analysis fully reproducible and ensures the numbers match the official
-progression used in the game.</p>
+entering values manually or relying on secondary sources, we pull the
+data directly from the site. This approach keeps the analysis fully
+reproducible and ensures the numbers match the official progression used
+in the game.</p>
 <pre class="r"><code># 1. Read the HTML from the RuneScape Wiki XP table page
 url &lt;- &quot;https://runescape.wiki/w/Experience/Table&quot;
 
@@ -401,7 +401,7 @@ xp_percent &lt;- xp_table %&gt;%
 pieces of information: the level itself, the total cumulative XP
 required to reach that level, and the XP needed to advance to the next
 level. Because the data is clean, any patterns or surprises we uncover
-from here on out come from the shape of the progression itself — not
+from here on out come from the shape of the progression itself - not
 from messy inputs.</p>
 <div id="the-long-climb-total-xp-from-1-to-99" class="section level3">
 <h3>The Long Climb: Total XP from 1 to 99</h3>
@@ -452,11 +452,6 @@ xp_table %&gt;%
     panel.grid.minor = element_blank(),
     legend.position = &quot;top&quot;
   )</code></pre>
-<pre><code>## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-## ℹ Please use `linewidth` instead.
-## This warning is displayed once every 8 hours.
-## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-## generated.</code></pre>
 <p><img src="p01_files/figure-html/cumulative_XP_99-1.png" width="672" /></p>
 <p>The curve is immediately striking. Early levels require only a small
 fraction of the total XP, while the later levels account for most of the
@@ -721,12 +716,9 @@ becomes clear.</p>
 <p>The RuneScape leveling system progresses in simple steps, but the
 experience required grows exponentially. This creates a persistent
 mismatch: numbers that look close together often represent vastly
-different amounts of effort.</p>
-<p>By looking at the system in different ways - cumulatively,
-proportionally, logarithmically, over time, or with warped axes - the
-same structure reveals different patterns. Saying “level 92 is half of
-99” isn’t a paradox; it’s just how exponential growth appears when we
-read it on a linear scale.</p>
+different amounts of effort. So, claiming ‘level 92 is half of 99’ isn’t
+a paradox; it’s simply how exponential growth appears on a linear
+scale.</p>
 </div>
 
 

@@ -106,7 +106,7 @@ At this point, our dataset is simple and complete. We have three key pieces of i
 
 We start with the most straightforward visualization: plotting cumulative XP against level. This shows each level in order along the horizontal axis while illustrating how much total effort accumulates as players progress.
 
-```{r cumulative_XP_99}
+```{r cumulative_XP_99, warning=FALSE, message=FALSE}
 # ---- Milestones with XP values ----
 milestones <- xp_table %>%
   filter(level %in% c(92, 99)) %>%
