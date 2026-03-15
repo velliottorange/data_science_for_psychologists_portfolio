@@ -303,9 +303,7 @@ United States” compiles standardized information on U.S. lighthouses
 including location (latitude/longitude), year established, tower height,
 range, and notes on status. Rather than manually copying entries or
 using a secondary dataset, we scrape the canonical list directly from
-Wikipedia. This ensures reproducibility and ties our analysis to a
-visible public source that encodes the selection and categorization
-decisions of the community that maintains the page.</p>
+Wikipedia.</p>
 <pre class="r"><code># Load all required packages quietly
 suppressMessages({
   library(tidyverse)
@@ -660,7 +658,7 @@ search_lighthouses &lt;- function(df,
   }
 }
 
-# ---- Example Usage ----
+# ---- Example usage ----
 # All lighthouses taller than 150 ft
 search_lighthouses(lighthouses_clean, min_height = 150)</code></pre>
 <pre><code>## # A tibble: 66 × 13
@@ -1021,10 +1019,9 @@ the reach and efficiency of coastal lights. Considering age, height, and
 lens type together, we can trace how design choices, operational
 practices, and innovations shaped U.S. lighthouse construction over more
 than two centuries.</p>
-<pre class="r"><code># Create RDS file
-dir.create(&quot;data&quot;, showWarnings = FALSE)
-
-saveRDS(lighthouses_clean, &quot;data/lighthouses_clean.rds&quot;)</code></pre>
+</div>
+<div id="rds-file" class="section level3">
+<h3>RDS File</h3>
 </div>
 
 

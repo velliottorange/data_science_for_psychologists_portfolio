@@ -533,9 +533,7 @@ Lens type and automation status are inconsistently reported, limiting detailed q
 
 Newer lighthouses increasingly feature automated systems and modern optics. Many modern lenses, such as the VRB‑25, are Fresnel-derived but smaller, lighter, and designed for efficiency rather than sheer range. Automation reduced the need for on-site personnel and allowed construction in smaller or remote locations. The gradual adoption of classical Fresnel lenses in the 19th century and their modern derivatives demonstrates a clear technological evolution that improved the reach and efficiency of coastal lights. Considering age, height, and lens type together, we can trace how design choices, operational practices, and innovations shaped U.S. lighthouse construction over more than two centuries.
 
-### RDS File
-
-```{r lighthouse_RDS_file}
+```{r lighthouse_RDS_file, include=FALSE}
 # Create RDS file
 dir.create("data", showWarnings = FALSE)
 
