@@ -19,6 +19,7 @@ suppressMessages({
   library(stringr)
   library(janitor)
   library(ggplot2)
+  library(poweRlaw)
 })
 ```
 
@@ -82,21 +83,24 @@ scrape_collapse_tables <- function(url) {
 url <- "https://en.wikipedia.org/wiki/List_of_building_and_structure_collapses"
 collapse_clean <- scrape_collapse_tables(url)
 
+# Create dataset used for analysis and plotting
+collapse_plot <- collapse_clean
+
 # Preview results
 glimpse(collapse_clean)
 ```
-### 
+### Largest-to-Median Ratios
 
-The dataset includes 314 structural collapse events. Most events are small, with a median of 14 casualties, but a few extreme events dominate the distribution. The largest collapse, the Banqiao and Shimantan Dams in China (1959), caused 85,600 casualties, more than 6,000 times the median. Other notable outliers include the Fidenae amphitheatre (20,000) and Circus Maximus upper tier (13,000) collapses in Roman Italy, and modern tragedies such as the Rana Plaza (1,134) collapse in Bangladesh.
+The dataset includes 314 structural collapse events. Most events are small, with a median of 14 casualties, but a few extreme events dominate the distribution. For instance, the Banqiao and Shimantan Dams in 1975 caused 85,600 casualties - over 6,100× the median. Other historically catastrophic events include the Fidenae amphitheatre collapse in 27 CE (20,000 casualties, 1,430× median), the upper tier collapse of the Circus Maximus in 140 CE (13,000 casualties, 930× median), the Ponte das Barcas in 1809 (4,000 casualties, 286× median), and the South Fork Dam in 1889 (2,209 casualties, 158× median).
 
 ```{r summary_statistics}
 # Basic summary statistics
 summary_stats <- collapse_plot %>%
   summarise(
     total_events = n(),
-    max_casualties = max(casualties),
-    median_casualties = median(casualties),
-    mean_casualties = mean(casualties)
+    max_casualties = max(casualties, na.rm = TRUE),
+    median_casualties = median(casualties, na.rm = TRUE),
+    mean_casualties = mean(casualties, na.rm = TRUE)
   )
 
 summary_stats
@@ -117,10 +121,97 @@ ratio <- collapse_plot %>%
 ratio
 ```
 
-The log–log rank–size plot is particularly useful for analyzing structural collapse severity because it transforms the wide range of casualties onto a scale where both small and extremely large events can be compared visually. In a heavy-tailed distribution, most events cluster at the lower end, while the largest events form the upper tail. Plotting rank versus casualties on logarithmic axes makes it easier to see whether these extreme events follow the same statistical pattern as ordinary collapses or stand out as true outliers. Events that depart sharply from the trend line, such as the Banqiao and Shimantan Dam or Fidenae amphitheatre collapses, may be considered dragon-king events, reflecting extraordinary circumstances or mechanisms that generate disproportionately large consequences.
+```{r largest_to_median_histogram, fig.width=14, fig.height=10}
+# Identify top 10 collapses
+top10 <- collapse_plot %>%
+  slice_max(casualties, n = 10) %>%
+  select(year, structure, city, country, casualties)  # include year
 
-```{r severity_histogram}
-# Identify top extreme events
+# Prepare top 10 with year labels and ratio to median
+top10_plot_data <- top10 %>%
+  mutate(
+    clean_name = str_remove_all(structure, regex("collapse", ignore_case = TRUE)),
+    clean_name = str_squish(clean_name),
+    
+    # Add AD for years < 500
+    year_label = ifelse(as.numeric(year) < 500,
+                        paste0(year, " AD"),
+                        as.character(year)),
+    
+    # Combine name + year for x-axis labels
+    label = paste0(clean_name, " (", year_label, ")"),
+    
+    # Calculate ratio to median
+    ratio_to_median = round(casualties / summary_stats$median_casualties, 0)
+  ) %>%
+  arrange(desc(ratio_to_median)) %>%
+  mutate(label = factor(label, levels = label))  # preserve order
+
+# Manual color assignment
+top_colors <- c("firebrick2", "darkorange2", "olivedrab3", "deepskyblue3", "orchid3",
+                "gray75", "gray75", "gray75", "gray75", "gray75")
+names(top_colors) <- top10_plot_data$label
+
+# Plot
+ggplot(top10_plot_data, aes(x = label, y = casualties, fill = label)) +
+  geom_col() +
+  scale_fill_manual(values = top_colors) +
+  # Add ratio labels above bars
+  geom_text(aes(label = paste0(ratio_to_median, "× median")), 
+            vjust = -0.5, size = 3.5) +
+  labs(
+    x = "Top Structural Collapses",
+    y = "Number of Casualties",
+    title = "Top 10 Collapses Relative to Median Casualties",
+    subtitle = "Median = 14; labels show multiples above median"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.subtitle = element_text(hjust = 0.5),
+    legend.position = "none"
+  )
+```
+
+### Tail Deviation / Log-Log Rank-Size Plot
+
+We fit a linear regression to the log10-transformed rank versus log10-transformed casualties, which approximates the power-law trend that governs heavy-tailed distributions. In this context, the slope of the line reflects how quickly the expected number of casualties decreases as we move down the ranking of events, while the intercept sets the baseline magnitude. By comparing the observed log-casualties of the top five collapses to the predicted values from this trend line, we can see which events are unusually large relative to what the power-law would suggest. This provides a quantitative basis for identifying extreme events that might warrant further investigation as potential dragon kings - events whose scale cannot be explained simply by the usual statistical pattern of structural collapses.
+
+```{r slope_intercept_predicted_causalities}
+collapse_numeric <- collapse_plot %>%
+  filter(!is.na(casualties) & casualties > 0) %>%
+  arrange(desc(casualties)) %>%
+  mutate(
+    rank = row_number(),
+    log_rank = log10(rank),
+    log_casualties = log10(casualties)
+  )
+
+# Fit linear model
+pl_fit <- lm(log_casualties ~ log_rank, data = collapse_numeric)
+
+# Extract slope and intercept
+slope <- coef(pl_fit)[2]
+intercept <- coef(pl_fit)[1]
+
+# Predicted log-casualties for the top 5 events
+top5_log_pred <- collapse_numeric %>%
+  slice(1:5) %>%
+  mutate(predicted_log = predict(pl_fit, .)) %>%
+  select(structure, rank, log_casualties, predicted_log)
+
+slope; intercept; top5_log_pred
+```
+
+The log–log rank–size plot transforms the wide range of casualties onto a logarithmic scale, revealing the heavy-tailed nature of structural collapses. A linear trend on the log–log axes approximates the power-law relationship between rank and casualties, with slope −1.76 and intercept 4.87 in the fitted model. Comparing the top events to the trend line, the Banqiao and Shimantan Dams (rank 1) sits slightly above the expected value (observed log₁₀ casualties 4.93 vs. predicted 4.87), while Fidenae (rank 2) is marginally below (observed 4.30 vs. predicted 4.33). The upper tier of Circus Maximus, Ponte das Barcas, and South Fork Dam similarly lie close to the predicted line. Although these events dominate the upper tail, their proximity to the trend line indicates that their extreme size is consistent with the heavy-tailed distribution, making them “upper-tail” events rather than statistical anomalies in this sense.
+
+```{r log_log_rank_size_plot, fig.width=14, fig.height=10}
+# ---- 1. Add predicted values for plotting ----
+collapse_numeric <- collapse_numeric %>%
+  mutate(predicted_casualties = 10^(predict(pl_fit, .)))  # convert back from log10
+
+# ---- 2. Identify top 5 collapses ----
 top_events <- collapse_plot %>%
   slice_max(casualties, n = 5) %>%
   mutate(
@@ -136,8 +227,8 @@ top_events <- collapse_plot %>%
     )
   )
 
-# Create grouping variable
-collapse_plot2 <- collapse_plot %>%
+# ---- 3. Merge top 5 info and create grouping variable ----
+collapse_plot2 <- collapse_numeric %>%
   left_join(
     top_events %>% select(structure, legend_label),
     by = "structure"
@@ -146,64 +237,126 @@ collapse_plot2 <- collapse_plot %>%
     event_group = ifelse(is.na(legend_label), "Other Events", legend_label)
   )
 
-# Order legend so "Other Events" appears last
+# ---- 4. Factor levels so "Other Events" appears last ----
 legend_levels <- c(top_events$legend_label, "Other Events")
+collapse_plot2$event_group <- factor(collapse_plot2$event_group, levels = legend_levels)
 
-collapse_plot2$event_group <- factor(
-  collapse_plot2$event_group,
-  levels = legend_levels
-)
-
-# Manual color assignment
-extreme_colors <- c(
-  "firebrick2",
-  "darkorange2",
-  "olivedrab3",
-  "deepskyblue3",
-  "orchid3"
-)
-
+# ---- 5. Manual color assignment ----
+extreme_colors <- c("firebrick2", "darkorange2", "olivedrab3", "deepskyblue3", "orchid3")
 names(extreme_colors) <- top_events$legend_label
-
 color_values <- c(extreme_colors, "Other Events" = "gray75")
+size_values <- c(setNames(rep(3.5, 5), top_events$legend_label), "Other Events" = 1.5)
 
-# Plot
+# ---- 6. Plot ----
 ggplot(collapse_plot2, aes(rank, casualties)) +
   
-  geom_point(
-    aes(color = event_group, size = event_group),
-    alpha = 0.8
-  ) +
+  # Points colored by event group
+  geom_point(aes(color = event_group, size = event_group), alpha = 0.8) +
   
+  # Add trend line from fitted log-log model
+  geom_line(aes(y = predicted_casualties), color = "black", linetype = "dashed") +
+  
+  # Log scales
   scale_x_log10() +
   scale_y_log10() +
   
+  # Manual colors and sizes
   scale_color_manual(values = color_values) +
+  scale_size_manual(values = size_values, guide = "none") +
   
-  scale_size_manual(
-    values = c(
-      setNames(rep(3.5, 5), top_events$legend_label),
-      "Other Events" = 1.5
-    ),
-    guide = "none"
-  ) +
-  
-  geom_smooth(
-    data = collapse_plot,
-    aes(rank, casualties),
-    method = "lm",
-    formula = y ~ x,
-    se = FALSE,
-    color = "black",
-    linetype = "dashed"
-  ) +
-  
+  # Labels
   labs(
     x = "Rank of Structural Collapse (1 = largest)",
     y = "Number of Casualties (log scale)",
     color = "Extreme Deviations",
     title = "Severity Distribution of Structural Collapses (Log-Log)",
-    subtitle = "Extreme deviations from the power-law trend identified"
+    subtitle = "Dashed line = fitted power-law trend"
+  ) +
+  
+  # Theme
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.subtitle = element_text(hjust = 0.5),
+    axis.title = element_text(size = 12),
+    legend.position = "right",
+    legend.title = element_text(face = "bold", hjust = 0.5),
+    legend.text = element_text(size = 10)
+  )
+```
+
+### Standardized Residuals / Z-Scores
+
+The Z-score plot measures deviations from the fitted log–log trend, highlighting events whose casualties are unusually high or low relative to the expected trend given their rank. Surprisingly, the top 5 casualty events do not correspond to the highest Z-scores. Instead, the highest Z-scores (≈1.05 - 1.07) belong to modern building collapses such as the 2018 Magnitogorsk building collapse (39 casualties, rank 97) and the 2019 Sihanoukville collapse (28 casualties, rank 117). These events are outliers relative to their position in the rank-casualty trend, often occurring in the mid-to-lower tail of the distribution rather than the extreme upper tail. This illustrates a critical point: dragon kings are not purely defined by absolute casualties, but by underlying mechanisms that cause them to deviate disproportionately from the expected statistical pattern. The Z-score plot is thus useful for detecting relative anomalies and guiding further investigation, but it should be interpreted alongside context, historical factors, and systemic mechanisms, rather than as a strict ranking of the “largest” events.
+
+```{r standardized_residuals_z_scores, fig.width=14, fig.height=10}
+# ---- 1. Prepare data ----
+collapse_numeric <- collapse_plot %>%
+  filter(!is.na(casualties) & casualties > 0) %>%
+  arrange(desc(casualties)) %>%
+  mutate(rank = row_number(),
+         log_rank = log10(rank),
+         log_casualties = log10(casualties))
+
+# ---- 2. Fit linear regression on log-log data ----
+pl_fit <- lm(log_casualties ~ log_rank, data = collapse_numeric)
+
+# ---- 3. Compute residuals and z-scores ----
+collapse_numeric <- collapse_numeric %>%
+  mutate(
+    residual = log_casualties - predict(pl_fit, collapse_numeric),
+    z_score = residual / sd(residual)
+  )
+
+# ---- 4. Merge top 5 casualties events for consistency ----
+top_events <- collapse_plot %>%
+  slice_max(casualties, n = 5) %>%
+  mutate(
+    clean_name = str_remove_all(structure, regex("collapse", ignore_case = TRUE)),
+    clean_name = str_squish(clean_name),
+    legend_label = paste0(
+      clean_name,
+      " (",
+      ifelse(as.numeric(year) < 500, paste0(year, " AD"), year),
+      ")"
+    )
+  )
+
+collapse_numeric2 <- collapse_numeric %>%
+  left_join(
+    top_events %>% select(structure, legend_label),
+    by = "structure"
+  ) %>%
+  mutate(
+    event_group = ifelse(is.na(legend_label), "Other Events", legend_label)
+  )
+
+# ---- 5. Factor levels so "Other Events" is at bottom ----
+legend_levels <- c(top_events$legend_label, "Other Events")
+collapse_numeric2$event_group <- factor(collapse_numeric2$event_group, levels = legend_levels)
+
+# ---- 6. Manual color assignment ----
+extreme_colors <- c("firebrick2", "darkorange2", "olivedrab3", "deepskyblue3", "orchid3")
+names(extreme_colors) <- top_events$legend_label
+color_values <- c(extreme_colors, "Other Events" = "gray50")
+size_values <- c(setNames(rep(3.5, 5), top_events$legend_label), "Other Events" = 1.5)
+
+# --- Step 7: Plot Z-scores ---
+ggplot(collapse_numeric2, aes(rank, z_score, color = event_group, size = event_group)) +
+  
+  geom_point(alpha = 0.8) +                        # All points
+  
+  scale_x_log10() +                                # Log scale for rank
+  scale_y_continuous() +                           # Z-scores linear
+  
+  scale_color_manual(values = color_values) +      # Top 5 event colors
+  scale_size_manual(values = size_values, guide = "none") +
+  
+  labs(
+    x = "Rank of Structural Collapse (1 = largest)",
+    y = "Z-Score (Standardized Residual)",
+    color = "Extreme Deviations",
+    title = "Standardized Deviations from Power-Law Trend",
   ) +
   
   theme_minimal() +
@@ -212,6 +365,13 @@ ggplot(collapse_plot2, aes(rank, casualties)) +
     plot.subtitle = element_text(hjust = 0.5),
     axis.title = element_text(size = 12),
     legend.position = "right",
-    legend.title.align = 0.5
+    legend.title = element_text(face = "bold", hjust = 0.5),
+    legend.text = element_text(size = 10)
   )
 ```
+
+### Conclusion
+
+The analysis of structural collapse data reveals a strongly skewed distribution of casualties in which a small number of disasters dominate the historical record. Events such as the Banqiao and Shimantan Dam failure, the Fidenae amphitheatre collapse, and the South Fork Dam disaster are orders of magnitude larger than the typical event, exceeding the median collapse by hundreds or even thousands of times. When the data are viewed on logarithmic scales, however, these extreme events largely follow the heavy-tailed pattern predicted by a power-law relationship between rank and severity. In statistical terms, they occupy the upper end of the same distribution rather than forming a clearly separate class of anomalies.
+
+At the same time, the residual and Z-score analysis highlights a different perspective: some collapses deviate from the expected trend even when their absolute casualty counts are relatively modest. This illustrates that statistical extremeness and absolute scale are not always the same thing. The catastrophic failure of the Banqiao Dam in 1975 demonstrates how dragon-king dynamics can arise from interacting system failures. Record rainfall from Typhoon Nina produced floods far beyond the dam’s design capacity, communication systems failed during the storm, evacuation warnings did not reach downstream communities, and the collapse triggered a cascade in which more than sixty additional dams failed across the region. The resulting flood wave devastated towns and infrastructure across Henan province, ultimately affecting millions of people and causing tens of thousands of deaths from flooding, disease, and famine. Such cascading failures illustrate how systemic vulnerabilities can amplify consequences far beyond ordinary structural accidents.
