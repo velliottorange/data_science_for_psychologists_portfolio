@@ -1,5 +1,74 @@
 ---
-title: "Portfolio 5"
+title: "Moonwatch: Data Adventures Around Jupiter"
+name: Verity Elliott
+output: html_document
 ---
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+```{r load-packages, warning = FALSE, message=FALSE}
+# Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(janitor)
+})
+```
+
+```{r retrieve_data}
+# ---- 1. Fetch the page ----
+url <- "https://en.wikipedia.org/wiki/Moons_of_Jupiter"
+page <- read_html(url)
+all_tables <- page %>% html_elements("table.wikitable")
+correct_idx <- which(str_detect(html_text(all_tables), "Semi-major"))[1]
+
+# ---- 2. Parse raw table ----
+raw_df <- all_tables[[correct_idx]] %>% 
+  html_table(fill = TRUE) %>% 
+  clean_names()
+
+# ---- 3. Map columns with explicit units ----
+jupiter_moons <- raw_df %>%
+  transmute(
+    name                = .[[2]],  
+    abs_mag             = .[[5]],  
+    diameter_km         = .[[6]],  # unit: km
+    mass_10e15_kg       = .[[7]],  # unit: 10^15 kg
+    semi_major_axis_km  = .[[8]],  # unit: km
+    orbital_period_days = .[[9]],  # unit: days
+    inclination_deg     = .[[10]], # unit: degrees
+    eccentricity        = .[[11]], 
+    year_raw            = .[[12]], 
+    group               = .[[15]]  
+  ) %>%
+  
+  # ---- 4. Final data polish ----
+  mutate(
+    # Strip footnotes and symbols like † from names and groups
+    name = str_trim(str_remove_all(as.character(name), "\\[.*?\\]|[†‡§*♠♥♦♣±]")),
+    group = str_trim(str_remove_all(as.character(group), "\\[.*?\\]")),
+    
+    # Fix the "lost moon" year issue (e.g., 19752000 -> 1975)
+    discovery_year = as.numeric(str_extract(as.character(year_raw), "\\d{4}")),
+    
+    # Clean numeric columns: remove "~", "+", "<", and commas
+    across(c(abs_mag, diameter_km, mass_10e15_kg, semi_major_axis_km, 
+             orbital_period_days, inclination_deg, eccentricity), 
+           ~as.numeric(str_extract(str_replace_all(as.character(.), "[^0-9.-]", ""), "-?\\d+\\.?\\d*")))
+  ) %>%
+  select(-year_raw) %>%
+  filter(!is.na(name), !is.na(discovery_year), !name %in% c("Name", "Proper name"))
+
+# Preview results
+glimpse(jupiter_moons)
+```
+
+### Discovery Timeline: The "Space Race" Effect
+
+### Mass Distribution: The Dominance of the Galileans
+
+### Orbital Architecture: Group Clustering and Families
+
+### Orbital Direction: Prograde vs. Retrograde
+
+### Orbital Density and Stability Zones
+
+### The Hill Sphere: Defining the Gravitational Limit
