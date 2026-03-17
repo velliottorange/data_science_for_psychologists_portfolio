@@ -1,5 +1,262 @@
 ---
-title: "Portfolio 6"
+title: "Meteor Metrics: Mapping the Distribution and Composition of Falling Space Debris"
+name: Verity Elliott
+output: html_document
 ---
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+```{r load-packages, warning = FALSE, message=FALSE}
+# Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(janitor)
+  library(sf)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+})
+```
+
+```{r retrieve_data}
+# ---- 1. Fetch the page ----
+url <- "https://en.wikipedia.org/wiki/Meteorite_fall"
+page <- read_html(url)
+
+# ---- 2. Identify correct tables ----
+get_table_after_text <- function(html_doc, header_text) {
+  target_node <- html_doc %>%
+    html_elements("h2, h3") %>%
+    keep(~ str_detect(html_text(.x), header_text))
+  
+  if (length(target_node) == 0) stop(paste("Header not found:", header_text))
+  
+  target_node %>%
+    html_element(xpath = "following::table[1]") %>%
+    # header = FALSE prevents the "NULL names" error
+    html_table(fill = TRUE, header = FALSE) 
+}
+
+# ---- 3. Parse and name columns manually ----
+recent_raw <- get_table_after_text(page, "Recent falls") %>% 
+  pluck(1) %>% 
+  slice(-1)
+
+historical_raw <- get_table_after_text(page, "Falls before automated monitoring") %>% 
+  pluck(1) %>% 
+  slice(-1)
+
+# ---- 4. Map columns by position (stable across header changes) ----
+process_data <- function(df, period_label) {
+  df %>%
+    transmute(
+      name           = .[[1]],
+      fall_date      = .[[3]],
+      country        = .[[4]],
+      region         = .[[5]],
+      classification = .[[6]],
+      period         = period_label
+    )
+}
+
+meteorites <- bind_rows(
+  process_data(recent_raw, "1959–2025"),
+  process_data(historical_raw, "1794–1959")
+) %>%
+  # ---- 5. Final data polish ----
+  mutate(
+    across(c(name, country, region, classification),
+           ~str_trim(str_remove_all(as.character(.), "\\[.*?\\]|[†‡§*♠♥♦♣±]"))),
+    
+    # Remove the "link" text that often gets stuck to the name
+    name = str_remove(name, "link$"), 
+    
+    year = as.numeric(str_extract(fall_date, "\\d{4}")),
+    month = str_extract(fall_date, "[A-Za-z]+")
+  ) %>%
+  filter(!is.na(year))
+
+# Preview results
+glimpse(meteorites)
+```
+
+###
+
+```{r fall_density_map}
+# ---- 1. Prepare map ----
+world <- ne_countries(scale = "medium", returnclass = "sf") %>%
+  filter(continent != "Antarctica") %>%
+  mutate(area_km2 = as.numeric(st_area(.)) / 1e6)
+
+# ---- 2. Match naming convention ----
+stats_final <- meteorites %>%
+  mutate(
+    c_clean = str_trim(str_remove_all(country, "\\[.*?\\]")),
+    c_map = case_when(
+      c_clean %in% c("USA", "United States", "US") ~ "United States of America",
+      c_clean %in% c("Russia", "Russian Federation") ~ "Russia",
+      c_clean == "Czech Republic" ~ "Czechia",
+      c_clean == "Republic of Korea" ~ "South Korea",
+      c_clean == "Burma" ~ "Myanmar",
+      c_clean == "Bosnia and Herzegovina" ~ "Bosnia and Herz.",
+      c_clean == "Central African Republic" ~ "Central African Rep.",
+      c_clean == "Swaziland" ~ "eSwatini",
+      str_detect(c_clean, "Burkina Faso") ~ "Burkina Faso",
+      c_clean == "Western Sahara" ~ "W. Sahara",
+      c_clean == "Tibet" ~ "China", # map usually attributes Tibet to China
+      TRUE ~ c_clean
+    )
+  ) %>%
+  group_by(c_map) %>%
+  summarise(total_falls = n(), .groups = 'drop')
+
+# ---- 3. Join and bin ----
+map_plot_data <- world %>%
+  left_join(stats_final, by = c("name" = "c_map")) %>%
+  mutate(
+    total_falls = replace_na(total_falls, 0),
+    density = (total_falls / area_km2) * 100000,
+    density_range = cut(
+      density,
+      breaks = c(-Inf, 0.00001, 0.5, 1, 5, 10, Inf),
+      labels = c("0", "0 - 0.5", "0.5 - 1.0", "1.0 - 5.0", "5.0 - 10.0", "10.0+"),
+      include.lowest = TRUE
+    )
+  )
+
+# ---- 4. Plot ----
+ggplot(data = map_plot_data) +
+  geom_sf(aes(fill = density_range), color = "grey30", size = 0.05) +
+  scale_fill_viridis_d(
+    option = "magma",
+    name = "Falls per 100,000 km²",
+    guide = guide_legend(nrow = 1, title.position = "top", label.position = "bottom", keywidth = unit(1.5, "cm"))
+  ) +
+  labs(
+    title = "Global Density of Confirmed Meteorite Falls",
+    subtitle = "Number of recovered falls per 100,000 km² by sovereign nation (~1800 - Present)"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+    plot.subtitle = element_text(hjust = 0.5, size = 11, margin = margin(b = 10)),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold", hjust = 0.5)
+  )
+```
+
+###
+
+```{r fall_composition_plot}
+# ---- 1. Classification mapping ----
+meteorite_trends <- meteorites %>%
+  mutate(
+    year = as.numeric(str_extract(fall_date, "\\d{4}")),
+    type_tier = case_when(
+      # Tier 1: Metallics (core fragments)
+      str_detect(classification, "Iron|Pallasite|Mesosiderite|IAB|IIAB|IIIAB") ~ "Tier 1: Metallic",
+      
+      # Tier 3: Exotics (planetary fragments)
+      str_detect(classification, "Achondrite|Shergottite|Nakhlite|Eucrite|Howardite|Diogenite|Lunar|Martian|^C[V|M|I|O|R|K][0-9]") ~ "Tier 3: Exotic",
+      
+      # Tier 2: Stonies
+      str_detect(classification, "^[H|L|E|R][L]*[3-6]") ~ "Tier 2: Ordinary Stony",
+      
+      TRUE ~ "Other/Unclassified"
+    )
+  ) %>%
+  filter(year >= 1800 & year <= 2025) %>%
+  mutate(decade = (year %/% 10) * 10)
+
+# ---- 2. Plot ----
+ggplot(meteorite_trends, aes(x = decade, fill = type_tier)) +
+  geom_histogram(
+    position = "fill", 
+    binwidth = 10, 
+    color = "white", 
+    linewidth = 0.2
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  # Manual color assignment
+  scale_fill_manual(
+    values = c(
+      "Tier 1: Metallic"       = "cadetblue",
+      "Tier 2: Ordinary Stony" = "darkseagreen",
+      "Tier 3: Exotic"         = "coral",
+      "Other/Unclassified"     = "grey80"
+    ),
+    name = "Discovery Tier"
+  ) +
+  labs(
+    title = "Composition of Global Meteorite Falls",
+    subtitle = "Proportion of falls by classification tier (1795 - Present)",
+    x = "Decade",
+    y = "Percentage of Total Falls"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 15),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold", hjust = 0.5),
+    panel.grid.minor = element_blank()
+  )
+```
+
+```{r fall_composition_zoom_plot}
+# ---- 1. Filter for Tier 3 and sub-classify ----
+tier3_breakdown <- meteorites %>%
+  mutate(
+    year = as.numeric(str_extract(fall_date, "\\d{4}")),
+    # Identify the specific 'Exotic' sub-types
+    exotic_type = case_when(
+      # Planetary: Fragments of the Moon and Mars
+      str_detect(classification, "(?i)Lunar|Martian|Shergottite|Nakhlite|Chassignite") ~ "Planetary (Moon/Mars)",
+      
+      # HED: Differentiated rocks from the asteroid Vesta
+      str_detect(classification, "(?i)Eucrite|Howardite|Diogenite") ~ "Asteroidal Crust (Vesta)",
+      
+      # Carbonaceous
+      str_detect(classification, "(?i)^C[V|M|I|O|R|K][0-9]|Carbonaceous") ~ "Carbonaceous Chondrites",
+      
+      # Other: Rare achondrites (Acapulcoites, etc.)
+      str_detect(classification, "(?i)Achondrite") ~ "Other Rare Achondrites",
+      
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  # Focus only on the 'Exotics'
+  filter(!is.na(exotic_type) & year >= 1800 & year <= 2025) %>%
+  mutate(decade = (year %/% 10) * 10)
+
+# ---- 2. Plot ----
+ggplot(tier3_breakdown, aes(x = decade, fill = exotic_type)) +
+  geom_histogram(
+    position = "fill", 
+    binwidth = 10, 
+    color = "white", 
+    linewidth = 0.2
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  # Manual Colors for scientific distinction
+  scale_fill_manual(
+    values = c(
+      "Planetary (Moon/Mars)"    = "indianred3",
+      "Asteroidal Crust (Vesta)" = "lightblue3",
+      "Carbonaceous Chondrites"  = "darkolivegreen3",
+      "Other Rare Achondrites"   = "goldenrod2"  
+    ),
+    name = "Exotic Sub-Type"
+  ) +
+  labs(
+    title = "Composition of Exotic Meteorite Falls",
+    subtitle = "Proportion of falls by exotic sub-type (1795 - Present)",
+    x = "Decade",
+    y = "Percentage of Total Exotic Falls"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 15),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+        legend.title = element_text(face = "bold", hjust = 0.5),
+    legend.position = "bottom"
+  )
+```
