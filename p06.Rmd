@@ -13,6 +13,7 @@ suppressMessages({
   library(sf)
   library(rnaturalearth)
   library(rnaturalearthdata)
+  library(forcats)
 })
 ```
 
@@ -80,7 +81,7 @@ glimpse(meteorites)
 
 ###
 
-```{r fall_density_map}
+```{r fall_density_map, fig.width=14, fig.height=10}
 # ---- 1. Prepare map ----
 world <- ne_countries(scale = "medium", returnclass = "sf") %>%
   filter(continent != "Antarctica") %>%
@@ -145,7 +146,56 @@ ggplot(data = map_plot_data) +
 
 ###
 
-```{r fall_composition_plot}
+```{r meteorite_season_plot, fig.width=14, fig.height=10}
+# ---- 1. Coordinate-based hemisphere mapping ----
+world_coords <- map_data("world") %>%
+  group_by(region) %>%
+  summarise(lat = mean(range(lat)), .groups = 'drop') %>%
+  rename(country = region)
+
+# ---- 2. Clean and drop unneeded levels ----
+valid_months <- c("January", "February", "March", "April", "May", "June", 
+                  "July", "August", "September", "October", "November", "December")
+
+meteorite_hemispheres <- meteorites %>%
+  # Ensure the month column is string data
+  mutate(month = str_trim(as.character(month))) %>%
+  # Only keep rows where month is in valid list
+  filter(month %in% valid_months) %>%
+  left_join(world_coords, by = "country") %>%
+  mutate(
+    hemisphere = case_when(
+      lat >= 0 ~ "Northern Hemisphere",
+      lat < 0  ~ "Southern Hemisphere",
+      TRUE     ~ "Unknown"
+    ),
+    # Re-factor with only the 12 valid months
+    month = factor(month, levels = valid_months)
+  ) %>%
+  filter(hemisphere != "Unknown")
+
+# ---- 3. Plot ----
+ggplot(meteorite_hemispheres, aes(x = month, fill = hemisphere)) +
+  geom_bar(show.legend = FALSE) +
+  facet_wrap(~hemisphere, scales = "free_y", ncol = 1) +
+  scale_fill_manual(values = c("Northern Hemisphere" = "slategray3", "Southern Hemisphere" = "chocolate3")) +
+  labs(
+    title = "Meteorite Season: Northern vs. Southern Hemisphere",
+    x = "Month",
+    y = "Number of Recorded Falls"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold", size = 12)
+  )
+```
+
+###
+
+```{r fall_composition_plot, fig.width=14, fig.height=10}
 # ---- 1. Classification mapping ----
 meteorite_trends <- meteorites %>%
   mutate(
@@ -201,7 +251,7 @@ ggplot(meteorite_trends, aes(x = decade, fill = type_tier)) +
   )
 ```
 
-```{r fall_composition_zoom_plot}
+```{r fall_composition_zoom_plot, fig.width=14, fig.height=10}
 # ---- 1. Filter for Tier 3 and sub-classify ----
 tier3_breakdown <- meteorites %>%
   mutate(

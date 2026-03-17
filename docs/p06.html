@@ -11,9 +11,9 @@
 
 
 
-<title>Portfolio 6</title>
+<title>Meteor Metrics: Mapping the Distribution and Composition of Falling Space Debris</title>
 
-<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -290,18 +290,318 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Portfolio 6</h1>
+<h1 class="title toc-ignore">Meteor Metrics: Mapping the Distribution
+and Composition of Falling Space Debris</h1>
 
 </div>
 
 
-<blockquote>
-<p>The projects should be numbered consecutively (i.e., in the order in
-which you began them), and should include for each project a description
-of the goal, the product (computer program, hand graph, computer graph,
-etc.), the data, and some interpretation. Reports must be reproducible
-and of high quality in terms of writing, grammar, presentation, etc.</p>
-</blockquote>
+<pre class="r"><code># Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(janitor)
+  library(sf)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  library(forcats)
+})</code></pre>
+<pre class="r"><code># ---- 1. Fetch the page ----
+url &lt;- &quot;https://en.wikipedia.org/wiki/Meteorite_fall&quot;
+page &lt;- read_html(url)
+
+# ---- 2. Identify correct tables ----
+get_table_after_text &lt;- function(html_doc, header_text) {
+  target_node &lt;- html_doc %&gt;%
+    html_elements(&quot;h2, h3&quot;) %&gt;%
+    keep(~ str_detect(html_text(.x), header_text))
+  
+  if (length(target_node) == 0) stop(paste(&quot;Header not found:&quot;, header_text))
+  
+  target_node %&gt;%
+    html_element(xpath = &quot;following::table[1]&quot;) %&gt;%
+    # header = FALSE prevents the &quot;NULL names&quot; error
+    html_table(fill = TRUE, header = FALSE) 
+}
+
+# ---- 3. Parse and name columns manually ----
+recent_raw &lt;- get_table_after_text(page, &quot;Recent falls&quot;) %&gt;% 
+  pluck(1) %&gt;% 
+  slice(-1)
+
+historical_raw &lt;- get_table_after_text(page, &quot;Falls before automated monitoring&quot;) %&gt;% 
+  pluck(1) %&gt;% 
+  slice(-1)
+
+# ---- 4. Map columns by position (stable across header changes) ----
+process_data &lt;- function(df, period_label) {
+  df %&gt;%
+    transmute(
+      name           = .[[1]],
+      fall_date      = .[[3]],
+      country        = .[[4]],
+      region         = .[[5]],
+      classification = .[[6]],
+      period         = period_label
+    )
+}
+
+meteorites &lt;- bind_rows(
+  process_data(recent_raw, &quot;1959–2025&quot;),
+  process_data(historical_raw, &quot;1794–1959&quot;)
+) %&gt;%
+  # ---- 5. Final data polish ----
+  mutate(
+    across(c(name, country, region, classification),
+           ~str_trim(str_remove_all(as.character(.), &quot;\\[.*?\\]|[†‡§*♠♥♦♣±]&quot;))),
+    
+    # Remove the &quot;link&quot; text that often gets stuck to the name
+    name = str_remove(name, &quot;link$&quot;), 
+    
+    year = as.numeric(str_extract(fall_date, &quot;\\d{4}&quot;)),
+    month = str_extract(fall_date, &quot;[A-Za-z]+&quot;)
+  ) %&gt;%
+  filter(!is.na(year))
+
+# Preview results
+glimpse(meteorites)</code></pre>
+<pre><code>## Rows: 1,232
+## Columns: 8
+## $ name           &lt;chr&gt; &quot;Okulovka&quot;, &quot;McDonough&quot;, &quot;Maoming&quot;, &quot;Bordj Rhoraffa&quot;, &quot;…
+## $ fall_date      &lt;chr&gt; &quot;27 October 2025&quot;, &quot;26 June 2025&quot;, &quot;28 May 2025&quot;, &quot;20 M…
+## $ country        &lt;chr&gt; &quot;Russia&quot;, &quot;USA&quot;, &quot;China&quot;, &quot;Algeria&quot;, &quot;Poland&quot;, &quot;Belarus…
+## $ region         &lt;chr&gt; &quot;Novgorodskaya&quot;, &quot;Georgia&quot;, &quot;Guangdong&quot;, &quot;El Oued&quot;, &quot;Bi…
+## $ classification &lt;chr&gt; &quot;LL6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;H6&quot;, &quot;L5&quot;, &quot;LL4-6&quot;, &quot;L5…
+## $ period         &lt;chr&gt; &quot;1959–2025&quot;, &quot;1959–2025&quot;, &quot;1959–2025&quot;, &quot;1959–2025&quot;, &quot;19…
+## $ year           &lt;dbl&gt; 2025, 2025, 2025, 2025, 2025, 2024, 2024, 2024, 2024, 2…
+## $ month          &lt;chr&gt; &quot;October&quot;, &quot;June&quot;, &quot;May&quot;, &quot;May&quot;, &quot;February&quot;, &quot;December&quot;…</code></pre>
+<div id="section" class="section level3">
+<h3></h3>
+<pre class="r"><code># ---- 1. Prepare map ----
+world &lt;- ne_countries(scale = &quot;medium&quot;, returnclass = &quot;sf&quot;) %&gt;%
+  filter(continent != &quot;Antarctica&quot;) %&gt;%
+  mutate(area_km2 = as.numeric(st_area(.)) / 1e6)
+
+# ---- 2. Match naming convention ----
+stats_final &lt;- meteorites %&gt;%
+  mutate(
+    c_clean = str_trim(str_remove_all(country, &quot;\\[.*?\\]&quot;)),
+    c_map = case_when(
+      c_clean %in% c(&quot;USA&quot;, &quot;United States&quot;, &quot;US&quot;) ~ &quot;United States of America&quot;,
+      c_clean %in% c(&quot;Russia&quot;, &quot;Russian Federation&quot;) ~ &quot;Russia&quot;,
+      c_clean == &quot;Czech Republic&quot; ~ &quot;Czechia&quot;,
+      c_clean == &quot;Republic of Korea&quot; ~ &quot;South Korea&quot;,
+      c_clean == &quot;Burma&quot; ~ &quot;Myanmar&quot;,
+      c_clean == &quot;Bosnia and Herzegovina&quot; ~ &quot;Bosnia and Herz.&quot;,
+      c_clean == &quot;Central African Republic&quot; ~ &quot;Central African Rep.&quot;,
+      c_clean == &quot;Swaziland&quot; ~ &quot;eSwatini&quot;,
+      str_detect(c_clean, &quot;Burkina Faso&quot;) ~ &quot;Burkina Faso&quot;,
+      c_clean == &quot;Western Sahara&quot; ~ &quot;W. Sahara&quot;,
+      c_clean == &quot;Tibet&quot; ~ &quot;China&quot;, # map usually attributes Tibet to China
+      TRUE ~ c_clean
+    )
+  ) %&gt;%
+  group_by(c_map) %&gt;%
+  summarise(total_falls = n(), .groups = &#39;drop&#39;)
+
+# ---- 3. Join and bin ----
+map_plot_data &lt;- world %&gt;%
+  left_join(stats_final, by = c(&quot;name&quot; = &quot;c_map&quot;)) %&gt;%
+  mutate(
+    total_falls = replace_na(total_falls, 0),
+    density = (total_falls / area_km2) * 100000,
+    density_range = cut(
+      density,
+      breaks = c(-Inf, 0.00001, 0.5, 1, 5, 10, Inf),
+      labels = c(&quot;0&quot;, &quot;0 - 0.5&quot;, &quot;0.5 - 1.0&quot;, &quot;1.0 - 5.0&quot;, &quot;5.0 - 10.0&quot;, &quot;10.0+&quot;),
+      include.lowest = TRUE
+    )
+  )
+
+# ---- 4. Plot ----
+ggplot(data = map_plot_data) +
+  geom_sf(aes(fill = density_range), color = &quot;grey30&quot;, size = 0.05) +
+  scale_fill_viridis_d(
+    option = &quot;magma&quot;,
+    name = &quot;Falls per 100,000 km²&quot;,
+    guide = guide_legend(nrow = 1, title.position = &quot;top&quot;, label.position = &quot;bottom&quot;, keywidth = unit(1.5, &quot;cm&quot;))
+  ) +
+  labs(
+    title = &quot;Global Density of Confirmed Meteorite Falls&quot;,
+    subtitle = &quot;Number of recovered falls per 100,000 km² by sovereign nation (~1800 - Present)&quot;
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 15),
+    plot.subtitle = element_text(hjust = 0.5, size = 11, margin = margin(b = 10)),
+    legend.position = &quot;bottom&quot;,
+    legend.title = element_text(face = &quot;bold&quot;, hjust = 0.5)
+  )</code></pre>
+<p><img src="p06_files/figure-html/fall_density_map-1.png" width="1344" /></p>
+</div>
+<div id="section-1" class="section level3">
+<h3></h3>
+<pre class="r"><code># ---- 1. Coordinate-based hemisphere mapping ----
+world_coords &lt;- map_data(&quot;world&quot;) %&gt;%
+  group_by(region) %&gt;%
+  summarise(lat = mean(range(lat)), .groups = &#39;drop&#39;) %&gt;%
+  rename(country = region)
+
+# ---- 2. Clean and drop unneeded levels ----
+valid_months &lt;- c(&quot;January&quot;, &quot;February&quot;, &quot;March&quot;, &quot;April&quot;, &quot;May&quot;, &quot;June&quot;, 
+                  &quot;July&quot;, &quot;August&quot;, &quot;September&quot;, &quot;October&quot;, &quot;November&quot;, &quot;December&quot;)
+
+meteorite_hemispheres &lt;- meteorites %&gt;%
+  # Ensure the month column is string data
+  mutate(month = str_trim(as.character(month))) %&gt;%
+  # Only keep rows where month is in valid list
+  filter(month %in% valid_months) %&gt;%
+  left_join(world_coords, by = &quot;country&quot;) %&gt;%
+  mutate(
+    hemisphere = case_when(
+      lat &gt;= 0 ~ &quot;Northern Hemisphere&quot;,
+      lat &lt; 0  ~ &quot;Southern Hemisphere&quot;,
+      TRUE     ~ &quot;Unknown&quot;
+    ),
+    # Re-factor with only the 12 valid months
+    month = factor(month, levels = valid_months)
+  ) %&gt;%
+  filter(hemisphere != &quot;Unknown&quot;)
+
+# ---- 3. Plot ----
+ggplot(meteorite_hemispheres, aes(x = month, fill = hemisphere)) +
+  geom_bar(show.legend = FALSE) +
+  facet_wrap(~hemisphere, scales = &quot;free_y&quot;, ncol = 1) +
+  scale_fill_manual(values = c(&quot;Northern Hemisphere&quot; = &quot;slategray3&quot;, &quot;Southern Hemisphere&quot; = &quot;chocolate3&quot;)) +
+  labs(
+    title = &quot;Meteorite Season: Northern vs. Southern Hemisphere&quot;,
+    x = &quot;Month&quot;,
+    y = &quot;Number of Recorded Falls&quot;
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = &quot;bold&quot;, size = 15, hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = &quot;bold&quot;, size = 12)
+  )</code></pre>
+<p><img src="p06_files/figure-html/meteorite_season_plot-1.png" width="1344" /></p>
+</div>
+<div id="section-2" class="section level3">
+<h3></h3>
+<pre class="r"><code># ---- 1. Classification mapping ----
+meteorite_trends &lt;- meteorites %&gt;%
+  mutate(
+    year = as.numeric(str_extract(fall_date, &quot;\\d{4}&quot;)),
+    type_tier = case_when(
+      # Tier 1: Metallics (core fragments)
+      str_detect(classification, &quot;Iron|Pallasite|Mesosiderite|IAB|IIAB|IIIAB&quot;) ~ &quot;Tier 1: Metallic&quot;,
+      
+      # Tier 3: Exotics (planetary fragments)
+      str_detect(classification, &quot;Achondrite|Shergottite|Nakhlite|Eucrite|Howardite|Diogenite|Lunar|Martian|^C[V|M|I|O|R|K][0-9]&quot;) ~ &quot;Tier 3: Exotic&quot;,
+      
+      # Tier 2: Stonies
+      str_detect(classification, &quot;^[H|L|E|R][L]*[3-6]&quot;) ~ &quot;Tier 2: Ordinary Stony&quot;,
+      
+      TRUE ~ &quot;Other/Unclassified&quot;
+    )
+  ) %&gt;%
+  filter(year &gt;= 1800 &amp; year &lt;= 2025) %&gt;%
+  mutate(decade = (year %/% 10) * 10)
+
+# ---- 2. Plot ----
+ggplot(meteorite_trends, aes(x = decade, fill = type_tier)) +
+  geom_histogram(
+    position = &quot;fill&quot;, 
+    binwidth = 10, 
+    color = &quot;white&quot;, 
+    linewidth = 0.2
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  # Manual color assignment
+  scale_fill_manual(
+    values = c(
+      &quot;Tier 1: Metallic&quot;       = &quot;cadetblue&quot;,
+      &quot;Tier 2: Ordinary Stony&quot; = &quot;darkseagreen&quot;,
+      &quot;Tier 3: Exotic&quot;         = &quot;coral&quot;,
+      &quot;Other/Unclassified&quot;     = &quot;grey80&quot;
+    ),
+    name = &quot;Discovery Tier&quot;
+  ) +
+  labs(
+    title = &quot;Composition of Global Meteorite Falls&quot;,
+    subtitle = &quot;Proportion of falls by classification tier (1795 - Present)&quot;,
+    x = &quot;Decade&quot;,
+    y = &quot;Percentage of Total Falls&quot;
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = &quot;bold&quot;, hjust = 0.5, size = 15),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    legend.position = &quot;bottom&quot;,
+    legend.title = element_text(face = &quot;bold&quot;, hjust = 0.5),
+    panel.grid.minor = element_blank()
+  )</code></pre>
+<p><img src="p06_files/figure-html/fall_composition_plot-1.png" width="1344" /></p>
+<pre class="r"><code># ---- 1. Filter for Tier 3 and sub-classify ----
+tier3_breakdown &lt;- meteorites %&gt;%
+  mutate(
+    year = as.numeric(str_extract(fall_date, &quot;\\d{4}&quot;)),
+    # Identify the specific &#39;Exotic&#39; sub-types
+    exotic_type = case_when(
+      # Planetary: Fragments of the Moon and Mars
+      str_detect(classification, &quot;(?i)Lunar|Martian|Shergottite|Nakhlite|Chassignite&quot;) ~ &quot;Planetary (Moon/Mars)&quot;,
+      
+      # HED: Differentiated rocks from the asteroid Vesta
+      str_detect(classification, &quot;(?i)Eucrite|Howardite|Diogenite&quot;) ~ &quot;Asteroidal Crust (Vesta)&quot;,
+      
+      # Carbonaceous
+      str_detect(classification, &quot;(?i)^C[V|M|I|O|R|K][0-9]|Carbonaceous&quot;) ~ &quot;Carbonaceous Chondrites&quot;,
+      
+      # Other: Rare achondrites (Acapulcoites, etc.)
+      str_detect(classification, &quot;(?i)Achondrite&quot;) ~ &quot;Other Rare Achondrites&quot;,
+      
+      TRUE ~ NA_character_
+    )
+  ) %&gt;%
+  # Focus only on the &#39;Exotics&#39;
+  filter(!is.na(exotic_type) &amp; year &gt;= 1800 &amp; year &lt;= 2025) %&gt;%
+  mutate(decade = (year %/% 10) * 10)
+
+# ---- 2. Plot ----
+ggplot(tier3_breakdown, aes(x = decade, fill = exotic_type)) +
+  geom_histogram(
+    position = &quot;fill&quot;, 
+    binwidth = 10, 
+    color = &quot;white&quot;, 
+    linewidth = 0.2
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  # Manual Colors for scientific distinction
+  scale_fill_manual(
+    values = c(
+      &quot;Planetary (Moon/Mars)&quot;    = &quot;indianred3&quot;,
+      &quot;Asteroidal Crust (Vesta)&quot; = &quot;lightblue3&quot;,
+      &quot;Carbonaceous Chondrites&quot;  = &quot;darkolivegreen3&quot;,
+      &quot;Other Rare Achondrites&quot;   = &quot;goldenrod2&quot;  
+    ),
+    name = &quot;Exotic Sub-Type&quot;
+  ) +
+  labs(
+    title = &quot;Composition of Exotic Meteorite Falls&quot;,
+    subtitle = &quot;Proportion of falls by exotic sub-type (1795 - Present)&quot;,
+    x = &quot;Decade&quot;,
+    y = &quot;Percentage of Total Exotic Falls&quot;
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = &quot;bold&quot;, hjust = 0.5, size = 15),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+        legend.title = element_text(face = &quot;bold&quot;, hjust = 0.5),
+    legend.position = &quot;bottom&quot;
+  )</code></pre>
+<p><img src="p06_files/figure-html/fall_composition_zoom_plot-1.png" width="1344" /></p>
+</div>
 
 
 
