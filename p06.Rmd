@@ -4,6 +4,10 @@ name: Verity Elliott
 output: html_document
 ---
 
+Meteorites are fragments of extraterrestrial material that survive their passage through Earth’s atmosphere and are recovered on the surface. Most originate from asteroids, though some come from differentiated bodies such as the Moon and Mars. They are commonly classified into broad groups based on composition and structure, including stony, iron, and achondritic meteorites. These materials provide direct physical samples of objects formed during the early history of the solar system.
+
+The study of meteorite falls relies on recorded observations of objects seen entering the atmosphere and subsequently recovered. These records span several centuries and come from a combination of historical accounts and modern monitoring efforts, so the available data reflects both the physical processes governing meteorite entry and the conditions under which observations are made. This project analyzes a dataset of confirmed meteorite falls to examine patterns in geographic distribution, timing, and classification.
+
 ```{r load-packages, warning = FALSE, message=FALSE}
 # Load all required packages quietly
 suppressMessages({
@@ -16,6 +20,12 @@ suppressMessages({
   library(forcats)
 })
 ```
+
+The dataset for this analysis is compiled from tables on Wikipedia’s "Meteorite fall" page, which document both historically recorded falls and more recent events detected through modern monitoring systems. Because the page separates meteorite records into distinct sections - “Recent falls” and “Falls before automated monitoring” - the scraper retrieves each table individually and combines them into a unified dataset. This preserves the distinction between observation eras while allowing for consistent analysis across the full time range.
+
+The raw tables contain a mixture of structured and unstructured text, including embedded citation markers, formatting artifacts, and inconsistent naming conventions. To produce a clean dataset, text fields are processed using regular expressions to remove bracketed references and extraneous symbols. Key variables - including meteorite name, fall date, country, region, and classification - are extracted by column position to ensure stability across changes in table formatting. Additional variables are derived from the fall date, including year and month, allowing for temporal analysis at multiple scales.
+
+After cleaning, the dataset contains a standardized record of meteorite falls spanning from the late eighteenth century to the present. Each entry includes geographic information, classification type, and temporal markers, providing a consistent foundation for examining global distribution patterns, seasonal trends, and compositional differences among meteorites.
 
 ```{r retrieve_data}
 # ---- 1. Fetch the page ----
@@ -79,7 +89,13 @@ meteorites <- bind_rows(
 glimpse(meteorites)
 ```
 
-###
+### Global Meteorite Fall Distribution: Density and Detection Bias
+
+The global distribution of meteorite falls is highly uneven, reflecting both natural processes and differences in observation and recovery. Rather than relying on raw counts alone, normalizing meteorite falls by land area provides a more meaningful comparison across countries of vastly different sizes. Large nations such as the United States and China report high total numbers of meteorites, but these counts are partly a function of their geographic scale. A density-based analysis identifies where meteorites are recovered most frequently relative to area, allowing smaller countries to be evaluated on equal footing.
+
+Several countries exhibit notably high meteorite fall densities. Mauritius, for example, shows the highest density in the dataset, despite having only a single recorded fall - a result of its small land area. Other high-density regions include Czechia, the Netherlands, Belgium, and Germany, where moderate numbers of recorded falls are concentrated within relatively small geographic boundaries. Japan also stands out, combining a large number of observed meteorites with a comparatively high density.
+
+In contrast, much of the world shows little to no recorded meteorite activity, with over one hundred countries reporting zero documented falls. This pattern is unlikely to reflect true differences in meteorite arrival rates, which are expected to be broadly uniform across Earth’s surface. Instead, it demonstrates the role of observational bias: meteorites are more likely to be detected and recorded in regions with higher population density, stronger scientific infrastructure, and longer histories of documentation.
 
 ```{r fall_density_map, fig.width=14, fig.height=10}
 # ---- 1. Prepare map ----
@@ -144,7 +160,11 @@ ggplot(data = map_plot_data) +
   )
 ```
 
-###
+### Meteorite Season: Northern vs. Southern Hemisphere
+
+Recorded meteorite falls show a clear seasonal pattern that differs between hemispheres, but this pattern reflects observation opportunities rather than variations in actual meteorite arrivals. The Northern Hemisphere accounts for 864 recorded falls, compared to 146 in the Southern Hemisphere. In the north, recorded falls increase through spring, peaking in April (10.4%) and June (10.6%), while in the south the highest percentages occur in July, September, and October (≈11%).
+
+If meteorites fell strictly according to orbital or celestial factors, both hemispheres would show peaks in similar months. Instead, the observed seasonal differences correspond with periods of warmer weather and longer daylight, when people are more likely to be outdoors and able to witness falls. The reduction in recorded events during cold or dark months indicates that the historical record is shaped by human presence rather than changes in the frequency of meteorite falls.
 
 ```{r meteorite_season_plot, fig.width=14, fig.height=10}
 # ---- 1. Coordinate-based hemisphere mapping ----
@@ -169,7 +189,7 @@ meteorite_hemispheres <- meteorites %>%
       lat < 0  ~ "Southern Hemisphere",
       TRUE     ~ "Unknown"
     ),
-    # Re-factor with only the 12 valid months
+    # Re-factor with only the months
     month = factor(month, levels = valid_months)
   ) %>%
   filter(hemisphere != "Unknown")
@@ -193,7 +213,9 @@ ggplot(meteorite_hemispheres, aes(x = month, fill = hemisphere)) +
   )
 ```
 
-###
+### Composition of Meteorite Falls
+
+Analysis of meteorite classification by decade reveals a consistent dominance of ordinary stony meteorites (Tier 2) across the past two centuries. These chondritic meteorites, which make up roughly 65–85% of observed falls per decade, are primarily composed of silicate minerals and are thought to represent the most common material from the early solar system. Metallic meteorites (Tier 1), typically 2–8% of falls, are largely iron-nickel alloys and originate from the cores of differentiated parent bodies known as planetesimals. Exotic meteorites (Tier 3), generally 3–18% of falls, include rare types such as lunar and Martian fragments, HED meteorites from the crust of asteroid Vesta, and carbonaceous chondrites rich in organic compounds and water-bearing minerals. Other or unclassified meteorites make up a small fraction, usually under 15%.
 
 ```{r fall_composition_plot, fig.width=14, fig.height=10}
 # ---- 1. Classification mapping ----
@@ -251,12 +273,14 @@ ggplot(meteorite_trends, aes(x = decade, fill = type_tier)) +
   )
 ```
 
+The exotic meteorites show a varied composition across decades. Asteroidal crust fragments from Vesta dominate many decades, particularly from the 1920s through 2010s. Carbonaceous chondrites appear consistently throughout the record but are generally less common, often representing 25–60% of exotic falls in a given decade. Planetary fragments from the Moon and Mars are rare, appearing sporadically (e.g., 1810, 1860, 1910, and 2010), while other rare achondrites contribute only occasionally.
+
 ```{r fall_composition_zoom_plot, fig.width=14, fig.height=10}
 # ---- 1. Filter for Tier 3 and sub-classify ----
 tier3_breakdown <- meteorites %>%
   mutate(
     year = as.numeric(str_extract(fall_date, "\\d{4}")),
-    # Identify the specific 'Exotic' sub-types
+    # Identify the specific 'exotic' sub-types
     exotic_type = case_when(
       # Planetary: Fragments of the Moon and Mars
       str_detect(classification, "(?i)Lunar|Martian|Shergottite|Nakhlite|Chassignite") ~ "Planetary (Moon/Mars)",
@@ -273,7 +297,7 @@ tier3_breakdown <- meteorites %>%
       TRUE ~ NA_character_
     )
   ) %>%
-  # Focus only on the 'Exotics'
+  # Focus only on the 'exotics'
   filter(!is.na(exotic_type) & year >= 1800 & year <= 2025) %>%
   mutate(decade = (year %/% 10) * 10)
 
@@ -286,7 +310,7 @@ ggplot(tier3_breakdown, aes(x = decade, fill = exotic_type)) +
     linewidth = 0.2
   ) +
   scale_y_continuous(labels = scales::percent) +
-  # Manual Colors for scientific distinction
+  # Manual color assignment
   scale_fill_manual(
     values = c(
       "Planetary (Moon/Mars)"    = "indianred3",
