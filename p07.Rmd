@@ -1,5 +1,153 @@
 ---
-title: "Portfolio 7"
+title: ""
+name: Verity Elliott
+output: html_document
 ---
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+```{r load-packages, warning = FALSE, message=FALSE}
+# Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(scales)
+})
+```
+
+```{r retrieve_data}
+# ---- 1. Scrape all tables ----
+url <- "https://en.wikipedia.org/wiki/List_of_cities_by_elevation"
+page <- read_html(url)
+
+all_tables <- page %>%
+  html_elements("table.wikitable") %>%
+  html_table(fill = TRUE)
+
+# ---- 2. Bind tables together and clean ----
+cities_df <- bind_rows(all_tables) %>%
+  set_names(c("country", "city", "region", "latitude", "longitude", "population", "elevation")) %>%
+  mutate(
+    # Clean up Region naming inconsistency and whitespace
+    region = str_trim(region),
+    region = case_when(
+      region %in% c("South America", "Central America", "North America") ~ "Americas",
+      TRUE ~ region
+    ),
+    
+    # Remove commas first, then extract the first number sequence
+    elevation = as.numeric(str_extract(str_remove_all(elevation, ","), "[0-9.-]+")),
+    
+    population = as.numeric(str_remove_all(population, ",")),
+    
+    # Clean coordinates
+    lat_num = as.numeric(str_extract(latitude, "[0-9.]+")),
+    latitude = ifelse(str_detect(latitude, "[Ss]"), lat_num * -1, lat_num),
+    lon_num = as.numeric(str_extract(longitude, "[0-9.]+")),
+    longitude = ifelse(str_detect(longitude, "[Ww]"), lon_num * -1, lon_num)
+  ) %>%
+  # Create a 'plot_pop' column where NAs are replaced with a small number (e.g., 5000)
+  mutate(plot_pop = ifelse(is.na(population), 5000, population)) %>%
+  select(country, city, region, latitude, longitude, population, plot_pop, elevation) %>%
+  filter(!is.na(latitude))
+
+glimpse(cities_df)
+```
+
+### Global Urban Elevation Profile
+
+```{r latitude_elevation_plot}
+# ---- 1. Calculate dynamic limits ----
+lat_min <- min(cities_df$latitude, na.rm = TRUE) - 5
+lat_max <- max(cities_df$latitude, na.rm = TRUE) + 5
+
+# ---- 2. Plot ----
+ggplot(cities_df, aes(x = latitude, y = elevation)) +
+  geom_point(aes(color = region, size = plot_pop), alpha = 0.5) +
+  geom_smooth(method = "loess", formula = 'y ~ x', color = "black", 
+              linetype = "dashed", se = FALSE) +
+  
+  # Scales
+  scale_x_continuous(breaks = seq(-60, 70, 10), limits = c(lat_min, lat_max)) +
+  scale_y_continuous(labels = label_comma()) +
+  scale_size_continuous(
+    name = "Population",
+    range = c(1, 12),
+    labels = label_comma()
+  ) +
+  
+  # Theme and labels
+  theme_minimal() +
+  labs(
+    title = "Global Urban Elevation Profile",
+    subtitle = "Distribution of major cities by latitude and altitude above sea level",
+    x = "Latitude (°)",
+    y = "Elevation (m)",
+    color = "Region"
+  ) +
+  theme(
+    # Center and bold headers
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 11, margin = margin(b = 15)),
+    
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.box.just = "center",      
+    legend.spacing.x = unit(0.8, "cm"), 
+    legend.title = element_text(face = "bold"),
+    
+    panel.grid.minor = element_blank()
+  ) +
+  # Force titles to be vertically centered relative to their keys
+  guides(
+    size = guide_legend(nrow = 1, title.position = "left", title.vjust = 0.5),
+    color = guide_legend(nrow = 1, title.position = "left", title.vjust = 0.5)
+  )
+```
+
+### Regional Altitude Comparisons
+
+```{r latitude_elevation_plot}
+# ---- 1. Calculate the outlier thresholds per region ----
+boxplot_data <- cities_df %>%
+  filter(!is.na(region), !is.na(elevation)) %>%
+  group_by(region) %>%
+  mutate(
+    q1 = quantile(elevation, 0.25),
+    q3 = quantile(elevation, 0.75),
+    iqr = q3 - q1,
+    upper_bound = q3 + 1.5 * iqr,
+    lower_bound = q1 - 1.5 * iqr,
+    # Tag cities as an outlier or non-outlier
+    is_outlier = elevation > upper_bound | elevation < lower_bound
+  ) %>%
+  ungroup() %>%
+  mutate(region = reorder(region, elevation, FUN = median))
+
+# ---- 2. Plot ----
+ggplot(boxplot_data, aes(x = region, y = elevation)) +
+  # Draw the boxes
+  geom_boxplot(aes(fill = region), alpha = 0.4, outlier.shape = NA, color = "black") + 
+  
+  # Draw the dots, but map color to the 'is_outlier' tag
+  geom_jitter(aes(color = is_outlier), 
+              width = 0.2, 
+              alpha = 0.6, 
+              size = 1.8) +
+  
+  # Manual color assignment
+  scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red3")) +
+  
+  scale_y_continuous(labels = label_comma()) +
+  theme_minimal() +
+  labs(
+    title = "Regional Altitude Comparisons",
+    subtitle = "Statistical spread of city elevations across the major continents",
+    x = "Region",
+    y = "Elevation (m)"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
