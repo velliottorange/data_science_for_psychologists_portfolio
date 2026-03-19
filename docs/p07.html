@@ -11,9 +11,9 @@
 
 
 
-<title>Portfolio 7</title>
+<title>The Vertical Dimension of Urbanization: How Elevation Shapes Global Cities</title>
 
-<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -290,18 +290,409 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Portfolio 7</h1>
+<h1 class="title toc-ignore">The Vertical Dimension of Urbanization: How
+Elevation Shapes Global Cities</h1>
 
 </div>
 
 
-<blockquote>
-<p>The projects should be numbered consecutively (i.e., in the order in
-which you began them), and should include for each project a description
-of the goal, the product (computer program, hand graph, computer graph,
-etc.), the data, and some interpretation. Reports must be reproducible
-and of high quality in terms of writing, grammar, presentation, etc.</p>
-</blockquote>
+<p>Cities are complex systems shaped by both human and environmental
+forces. While economic activity, trade networks, and political history
+often dominate discussions of urban development, physical geography
+plays an equally fundamental role. Elevation, in particular, influences
+climate, accessibility, infrastructure, and long-term habitability. From
+low-lying coastal capitals to high-altitude mountain settlements, cities
+occupy a wide vertical range that reflects both natural constraints and
+human adaptation.</p>
+<p>The global distribution of cities by elevation reveals how
+populations balance these constraints. Low elevations offer access to
+waterways, trade routes, and fertile land, while higher elevations can
+provide strategic or climatic advantages, particularly in tropical
+regions. This project analyzes a dataset of cities around the world to
+examine how elevation varies across latitude, region, and population
+size, and to identify broader patterns in the vertical structure of
+human settlement.</p>
+<pre class="r"><code># Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(scales)
+})</code></pre>
+<p>The dataset for this analysis is compiled from tables on Wikipedia’s
+“List of cities by elevation” page, which aggregates geographic and
+demographic information for cities across multiple continents. Because
+the page presents data in several separate tables rather than a single
+unified structure, the scraper retrieves all tables with the same
+formatting and combines them into a single dataset. This approach
+ensures consistent coverage while preserving the original structure of
+the source.</p>
+<p>The raw tables contain inconsistencies typical of scraped web data,
+including mixed formatting in numeric fields, embedded symbols, and
+variations in coordinate notation. Elevation and population values are
+stored as text with commas and additional characters, while latitude and
+longitude are expressed using directional indicators (N, S, E, W). To
+produce a clean dataset, numeric values are extracted using regular
+expressions, commas are removed, and coordinate directions are converted
+into signed decimal values. Regions are also standardized by grouping
+related subregions into broader continental categories.</p>
+<pre class="r"><code># ---- 1. Scrape all tables ----
+url &lt;- &quot;https://en.wikipedia.org/wiki/List_of_cities_by_elevation&quot;
+page &lt;- read_html(url)
+
+all_tables &lt;- page %&gt;%
+  html_elements(&quot;table.wikitable&quot;) %&gt;%
+  html_table(fill = TRUE)
+
+# ---- 2. Bind tables together and clean ----
+cities_df &lt;- bind_rows(all_tables) %&gt;%
+  set_names(c(&quot;country&quot;, &quot;city&quot;, &quot;region&quot;, &quot;latitude&quot;, &quot;longitude&quot;, &quot;population&quot;, &quot;elevation&quot;)) %&gt;%
+  mutate(
+    # Clean up region naming inconsistency and whitespace
+    region = str_trim(region),
+    region = case_when(
+      region %in% c(&quot;South America&quot;, &quot;Central America&quot;, &quot;North America&quot;) ~ &quot;Americas&quot;,
+      TRUE ~ region
+    ),
+    
+    # Remove commas first, then extract the first number sequence
+    elevation = as.numeric(str_extract(str_remove_all(elevation, &quot;,&quot;), &quot;[0-9.-]+&quot;)),
+    
+    population = as.numeric(str_remove_all(population, &quot;,&quot;)),
+    
+    # Clean coordinates
+    lat_num = as.numeric(str_extract(latitude, &quot;[0-9.]+&quot;)),
+    latitude = ifelse(str_detect(latitude, &quot;[Ss]&quot;), lat_num * -1, lat_num),
+    lon_num = as.numeric(str_extract(longitude, &quot;[0-9.]+&quot;)),
+    longitude = ifelse(str_detect(longitude, &quot;[Ww]&quot;), lon_num * -1, lon_num)
+  ) %&gt;%
+  # Create a &#39;plot_pop&#39; column where NAs are replaced with a small number (e.g., 5000)
+  mutate(plot_pop = ifelse(is.na(population), 5000, population)) %&gt;%
+  select(country, city, region, latitude, longitude, population, plot_pop, elevation) %&gt;%
+  filter(!is.na(latitude))
+
+glimpse(cities_df)</code></pre>
+<pre><code>## Rows: 260
+## Columns: 8
+## $ country    &lt;chr&gt; &quot;India&quot;, &quot;Brazil&quot;, &quot;Nepal&quot;, &quot;South Africa&quot;, &quot;Andorra&quot;, &quot;Chi…
+## $ city       &lt;chr&gt; &quot;Mumbai&quot;, &quot;São Paulo&quot;, &quot;Pokhara&quot;, &quot;Bloemfontein&quot;, &quot;Andorra …
+## $ region     &lt;chr&gt; &quot;Asia&quot;, &quot;Americas&quot;, &quot;Asia&quot;, &quot;Africa&quot;, &quot;Europe&quot;, &quot;Asia&quot;, &quot;Eu…
+## $ latitude   &lt;dbl&gt; 19.07609, -23.55028, 28.20960, -29.11667, 42.50000, 31.2304…
+## $ longitude  &lt;dbl&gt; 72.877426, -46.633889, 83.985600, 26.216667, -1.500000, 121…
+## $ population &lt;dbl&gt; 19980000, 21650000, 523000, 747431, 22256, 26320000, 137868…
+## $ plot_pop   &lt;dbl&gt; 19980000, 21650000, 523000, 747431, 22256, 26320000, 137868…
+## $ elevation  &lt;dbl&gt; 14, 799, 822, 1395, 1023, 4, 122, 123, 1339, 110, 170, 198,…</code></pre>
+<div id="climate-and-elevation-latitudinal-patterns-in-urban-settlement"
+class="section level3">
+<h3>Climate and Elevation: Latitudinal Patterns in Urban Settlement</h3>
+<p>The global distribution of cities shows a clear vertical pattern
+dictated by distance from the equator. In Tropical regions (0–23.5°
+Latitude), the median elevation is 1,438 meters, with some cities
+reaching as high as 4,100 meters. This reflects a climate buffer: in the
+heat of the tropics, high-altitude plateaus offer cooler, more temperate
+conditions that are more suitable for large-scale settlement than the
+humid lowlands.</p>
+<p>As cities move toward Temperate zones (35°+ Latitude), this vertical
+“ceiling” collapses. The median elevation drops to just 127 meters, as
+the environmental costs of living high up - such as extreme cold and
+shorter growing seasons - become too high. In these regions, urban
+growth concentrates in accessible lowlands where the climate is milder
+and the terrain is easier to build upon. This transition shows that
+while cities can exist at any height, the “habitable zone” for major
+populations shrinks significantly as distance from the equator
+increases.</p>
+<pre class="r"><code># Custom color palette
+region_palette &lt;- c(
+  &quot;Africa&quot;        = &quot;indianred2&quot;,
+  &quot;Americas&quot;      = &quot;darkgoldenrod2&quot;,
+  &quot;Asia&quot;          = &quot;darkseagreen3&quot;,
+  &quot;Europe&quot;        = &quot;darkslategray3&quot;,
+  &quot;Oceania&quot;       = &quot;plum3&quot;, 
+  &quot;South America&quot; = &quot;darkgoldenrod2&quot;  # Failsafe: map to &#39;Americas&#39;
+)
+
+# ---- 1. Calculate dynamic limits ----
+lat_min &lt;- min(cities_df$latitude, na.rm = TRUE) - 5
+lat_max &lt;- max(cities_df$latitude, na.rm = TRUE) + 5
+
+# ---- 2. Plot ----
+ggplot(cities_df, aes(x = latitude, y = elevation)) +
+  geom_point(aes(color = region, size = plot_pop), alpha = 0.5) +
+  geom_smooth(method = &quot;loess&quot;, formula = &#39;y ~ x&#39;, color = &quot;black&quot;, 
+              linetype = &quot;dashed&quot;, se = FALSE) +
+  
+  # Apply manual colors
+  scale_color_manual(values = region_palette) +
+  
+  # Scales
+  scale_x_continuous(breaks = seq(-60, 70, 10), limits = c(lat_min, lat_max)) +
+  scale_y_continuous(labels = label_comma()) +
+  scale_size_continuous(
+    name = &quot;Population&quot;,
+    range = c(1, 12),
+    labels = label_comma()
+  ) +
+  
+  # Theme and labels
+  theme_minimal() +
+  labs(
+    title = &quot;Global Urban Elevation Profile&quot;,
+    subtitle = &quot;Urban Density across Latitudinal and Altitudinal Gradients&quot;,
+    x = &quot;Latitude (°)&quot;,
+    y = &quot;Elevation (m)&quot;,
+    color = &quot;Region&quot;
+  ) +
+  theme(
+    # Center and bold Title and Subtitle
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    
+    legend.position = &quot;bottom&quot;,
+    legend.box = &quot;horizontal&quot;,
+    legend.box.just = &quot;center&quot;,      
+    legend.spacing.x = unit(0.8, &quot;cm&quot;), 
+    legend.title = element_text(face = &quot;bold&quot;),
+    
+    panel.grid.minor = element_blank()
+  ) +
+  guides(
+    size = guide_legend(nrow = 1, title.position = &quot;left&quot;, title.vjust = 0.5),
+    color = guide_legend(nrow = 1, title.position = &quot;left&quot;, title.vjust = 0.5)
+  )</code></pre>
+<p><img src="p07_files/figure-html/latitude_elevation_plot-1.png" width="1344" /></p>
+</div>
+<div id="regional-altitude-signatures-mountains-and-plains"
+class="section level3">
+<h3>Regional Altitude Signatures: Mountains and Plains</h3>
+<p>Regional differences in urban elevation show how the physical shape
+of a continent dictates where people live. The Americas display a unique
+“mountain-built” profile, with a median elevation of 1,630 meters. More
+than 35% of the cities in this region are located above 2,000 meters,
+often within the high plateaus and valleys of the Andes and Central
+American highlands. These settlements prove that significant populations
+can thrive in rugged terrain despite the logistical challenges of
+high-altitude living.</p>
+<p>In contrast, Europe and Oceania follow a “river-built” or coastal
+pattern. Their cities are concentrated in lowlands and coastal plains,
+with median elevations of only 119 meters and 39 meters, respectively.
+In these regions, not a single city in the dataset reaches the
+2,000-meter mark. Asia and Africa show a middle-ground pattern, where
+the vast majority of people live in low-lying river basins (median
+elevations around 210–217m), yet a few specialized “highland hubs” still
+exist. These contrasts show that altitude is not a universal barrier,
+but a regional feature shaped by the local landscape.</p>
+<pre class="r"><code># ---- 1. Calculate the outlier thresholds per region ----
+boxplot_data &lt;- cities_df %&gt;%
+  filter(!is.na(region), !is.na(elevation)) %&gt;%
+  group_by(region) %&gt;%
+  mutate(
+    q1 = quantile(elevation, 0.25),
+    q3 = quantile(elevation, 0.75),
+    iqr = q3 - q1,
+    upper_bound = q3 + 1.5 * iqr,
+    lower_bound = q1 - 1.5 * iqr,
+    # Tag cities as an outlier or non-outlier
+    is_outlier = elevation &gt; upper_bound | elevation &lt; lower_bound
+  ) %&gt;%
+  ungroup() %&gt;%
+  mutate(region = reorder(region, elevation, FUN = median))
+
+# ---- 2. Plot ----
+ggplot(boxplot_data, aes(x = region, y = elevation)) +
+  # Draw the boxes - fill mapped to our global region_palette
+  geom_boxplot(aes(fill = region), alpha = 0.4, outlier.shape = NA, color = &quot;black&quot;) + 
+  
+  # Draw the dots - color mapped to outlier status
+  geom_jitter(aes(color = is_outlier), 
+              width = 0.2, 
+              alpha = 0.6, 
+              size = 1.8) +
+  
+  # Apply manual colors
+  scale_fill_manual(values = region_palette) + 
+  scale_color_manual(values = c(&quot;FALSE&quot; = &quot;black&quot;, &quot;TRUE&quot; = &quot;indianred2&quot;)) +
+  
+  scale_y_continuous(labels = label_comma()) +
+  theme_minimal() +
+  labs(
+    title = &quot;Regional Altitude Comparisons&quot;,
+    subtitle = &quot;Contrasting &#39;Mountain-built&#39; vs. &#39;River-built&#39; Regional Profiles&quot;,
+    x = &quot;Region&quot;,
+    y = &quot;Elevation (m)&quot;
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    legend.position = &quot;none&quot;,
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.minor = element_blank()
+  )</code></pre>
+<p><img src="p07_files/figure-html/altitude_comparison_plot-1.png" width="1344" /></p>
+</div>
+<div id="elevation-gradients-distance-from-the-equator"
+class="section level3">
+<h3>Elevation Gradients: Distance from the Equator</h3>
+<p>While individual cities vary, the overall global trend follows a
+strict mathematical descent: for every degree of latitude moved away
+from the equator, the mean settlement altitude drops by an average of
+22.3 meters. This regression model reveals that the vast majority of
+high-altitude urbanism is a tropical phenomenon. Cities within 20° of
+the equator maintain an average elevation of nearly 1,300 meters, but
+this figure collapses to just 132 meters for cities located beyond the
+50th parallel. This consistent “downward slope” suggests that as
+distance from the equator increases, the environmental and economic
+costs of altitude grow exponentially, eventually anchoring almost all
+high-latitude settlement to the lowland plains.</p>
+<pre class="r"><code># ---- 1. Prepare data for regression ----
+regression_data &lt;- cities_df %&gt;%
+  filter(!is.na(latitude), !is.na(elevation)) %&gt;%
+  mutate(abs_lat = abs(latitude))
+
+# ---- 2. Run linear model ----
+model &lt;- lm(elevation ~ abs_lat, data = regression_data)
+
+# ---- 3. Plot ----
+ggplot(regression_data, aes(x = abs_lat, y = elevation)) +
+  geom_point(aes(color = region), alpha = 0.4, size = 2) +
+  # Add linear regression line
+  geom_smooth(method = &quot;lm&quot;, color = &quot;black&quot;, se = TRUE) +
+  
+  # Apply manual colors
+  scale_color_manual(values = region_palette) +
+  
+  scale_y_continuous(labels = label_comma()) +
+  theme_minimal() +
+  labs(
+    title = &quot;The Global Gradient of Settlement&quot;,
+    subtitle = &quot;Elevation vs. Distance from the Equator (Absolute Latitude)&quot;,
+    x = &quot;Degrees from Equator&quot;,
+    y = &quot;Elevation (m)&quot;,
+    color = &quot;Region&quot;
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    legend.title = element_text(hjust = 0.5, face = &quot;bold&quot;),
+    legend.position = &quot;right&quot;,
+    panel.grid.minor = element_blank()
+  )</code></pre>
+<p><img src="p07_files/figure-html/gradient_of_settlement_plot-1.png" width="1344" /></p>
+</div>
+<div id="urban-concentration-the-habitable-band-of-city-elevation"
+class="section level3">
+<h3>Urban Concentration: The Habitable Band of City Elevation</h3>
+<p>Heatmap analysis reveals that the global urban system is not evenly
+distributed across elevations, but is instead concentrated within a
+specific “habitable band.” While humans have settled at altitudes
+exceeding 4,000 meters, the vast majority of urban development occurs
+within a much narrower range. Specifically, the middle 50% of cities in
+this study are sandwiched between 59 and 1,622 meters, representing the
+core altitudinal zone for modern civilization.</p>
+<p>The data further shows a heavy “low-altitude bias.” Approximately 44%
+of the cities surveyed are situated below 500 meters, where flat terrain
+and proximity to water support dense infrastructure. In contrast, only
+16.5% of cities successfully transition into “high-altitude”
+environments above 2,000 meters. This distribution confirms that while
+high-elevation living is possible, it remains a geographical exception.
+The core of the global urban system is anchored to low-to-moderate
+elevations, where the barriers to construction, transportation, and
+resource access are at their lowest.</p>
+<pre class="r"><code>ggplot(cities_df, aes(x = latitude, y = elevation)) +
+  # Use &#39;raster&#39; to create a heat gradient
+  # Set contour = FALSE to fill the entire space with color
+  stat_density_2d(aes(fill = after_stat(density)), 
+                  geom = &quot;raster&quot;, 
+                  contour = FALSE,
+                  n = 200) + # &#39;n&#39; increases the resolution
+  
+  # Add the actual city points as tiny white dots
+  geom_point(color = &quot;white&quot;, alpha = 0.1, size = 0.5) +
+  
+  # Set heatmap color
+  scale_fill_viridis_c(option = &quot;inferno&quot;, labels = label_comma(), name = &quot;Density&quot;) +
+  
+  scale_y_continuous(labels = label_comma()) +
+  theme_minimal() +
+  labs(
+    title = &quot;Global Urban Density Heatmap&quot;,
+    subtitle = &quot;Density Analysis of Urban Distribution Across Elevations&quot;,
+    x = &quot;Latitude (°)&quot;,
+    y = &quot;Elevation (m)&quot;
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    legend.title = element_text(hjust = 0.5, face = &quot;bold&quot;),
+    legend.position = &quot;right&quot;,
+    
+    # Clean up background
+    panel.grid = element_blank()
+  )</code></pre>
+<p><img src="p07_files/figure-html/heatmap_plot-1.png" width="1344" /></p>
+</div>
+<div id="urban-scale-and-altitude-the-limits-of-high-elevation-cities"
+class="section level3">
+<h3>Urban Scale and Altitude: The Limits of High-Elevation Cities</h3>
+<p>Urban scale is fundamentally tied to elevation, revealing a clear
+“growth ceiling” for high-altitude cities. Statistical analysis
+identifies a critical tipping point at 87 meters: below this elevation,
+cities in this study reach an average population of 9.2 million. Once
+this 87-meter threshold is crossed, the average city size drops sharply
+to just 1.4 million. This suggests that while humans can settle at
+nearly any altitude, the logistical and economic requirements for a
+“Mega-city” are overwhelmingly met at sea level.</p>
+<p>This “scale gap” is likely driven by maritime access and topographic
+friction. Large-scale urbanism depends on the ability to move massive
+amounts of goods, food, and energy - tasks that are easiest and cheapest
+in low-lying coastal or river areas. As elevation increases, the costs
+of infrastructure and transportation act as a natural brake on growth.
+While a few high-altitude cities defy this trend through unique
+historical or political circumstances, the data confirms a probabilistic
+reality: as a city climbs higher, the likelihood of it reaching a global
+“Mega-city” scale steadily declines.</p>
+<pre class="r"><code># ---- 1. Define the threshold and model ----
+threshold_val &lt;- quantile(cities_df$population, 0.75, na.rm = TRUE)
+
+logistic_data &lt;- cities_df %&gt;%
+  mutate(is_mega = ifelse(population &gt;= threshold_val, 1, 0))
+
+log_model &lt;- glm(is_mega ~ elevation, data = logistic_data, family = binomial)
+
+# ---- 2. Calculate tipping point ----
+intercept &lt;- coef(log_model)[1]
+slope &lt;- coef(log_model)[2]
+tipping_point &lt;- as.numeric(-intercept / slope)
+
+# ---- 3. Plot ----
+ggplot(logistic_data, aes(x = elevation, y = is_mega)) +
+  # S-curve (probability line)
+  stat_smooth(method = &quot;glm&quot;, method.args = list(family = &quot;binomial&quot;), 
+              color = &quot;indianred2&quot;, linewidth = 1.5, se = FALSE) +
+  
+  # Vertical tipping point line
+  geom_vline(xintercept = tipping_point, linetype = &quot;dashed&quot;, color = &quot;grey40&quot;) +
+  
+  # Label for tipping point
+  annotate(&quot;text&quot;, x = tipping_point + 100, y = 0.55, 
+           label = paste0(&quot;50% Tipping Point: &quot;, round(tipping_point), &quot;m&quot;),
+           hjust = 0, fontface = &quot;italic&quot;, color = &quot;grey20&quot;) +
+  
+  # Scales and Labels
+  scale_y_continuous(labels = scales::percent, breaks = seq(0, 1, 0.1)) +
+  scale_x_continuous(labels = label_comma()) +
+  theme_minimal() +
+  labs(
+    title = &quot;The Vertical Limit of Urban Growth&quot;,
+    subtitle = &quot;Likelihood of Top-Quartile Population Relative to Elevation&quot;,
+    x = &quot;Elevation (m)&quot;,
+    y = &quot;Probability of Mega-Status&quot;
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    panel.grid.minor = element_blank()
+  )</code></pre>
+<p><img src="p07_files/figure-html/urban_scale_plot-1.png" width="1344" /></p>
+</div>
 
 
 
