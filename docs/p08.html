@@ -11,9 +11,9 @@
 
 
 
-<title>Portfolio 8</title>
+<title>Vanished Ambitions: An Examination of California’s Ghost Towns</title>
 
-<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -32,6 +32,29 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/selectize-0.12.4/css/selectize.bootstrap3.css" rel="stylesheet" />
+<script src="site_libs/selectize-0.12.4/js/selectize.min.js"></script>
+<link href="site_libs/crosstalk-1.2.2/css/crosstalk.min.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.2.2/js/crosstalk.min.js"></script>
+<script src="site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<link href="site_libs/leaflet-1.3.1/leaflet.css" rel="stylesheet" />
+<script src="site_libs/leaflet-1.3.1/leaflet.js"></script>
+<link href="site_libs/leafletfix-1.0.0/leafletfix.css" rel="stylesheet" />
+<script src="site_libs/proj4-2.6.2/proj4.min.js"></script>
+<script src="site_libs/Proj4Leaflet-1.0.1/proj4leaflet.js"></script>
+<link href="site_libs/rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet" />
+<script src="site_libs/leaflet-binding-2.2.3/leaflet.js"></script>
+<link href="site_libs/leaflet-easybutton-1.3.1/easy-button.css" rel="stylesheet" />
+<script src="site_libs/leaflet-easybutton-1.3.1/easy-button.js"></script>
+<script src="site_libs/leaflet-easybutton-1.3.1/EasyButton-binding.js"></script>
+<link href="site_libs/leaflet-locationfilter2-0.1.1/locationfilter.css" rel="stylesheet" />
+<script src="site_libs/leaflet-locationfilter2-0.1.1/locationfilter.js"></script>
+<script src="site_libs/leaflet-locationfilter2-0.1.1/locationfilter-bindings.js"></script>
+<link href="site_libs/ionicons-2.0.1/ionicons.min.css" rel="stylesheet" />
+<script src="site_libs/leaflet-providers-3.0.0/leaflet-providers.js"></script>
+<script src="site_libs/leaflet-providers-plugin-2.2.3/leaflet-providers-plugin.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-grid-3.4.1/bootstrap-grid.min.css" rel="stylesheet" />
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -290,18 +313,432 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Portfolio 8</h1>
+<h1 class="title toc-ignore">Vanished Ambitions: An Examination of
+California’s Ghost Towns</h1>
 
 </div>
 
 
-<blockquote>
-<p>The projects should be numbered consecutively (i.e., in the order in
-which you began them), and should include for each project a description
-of the goal, the product (computer program, hand graph, computer graph,
-etc.), the data, and some interpretation. Reports must be reproducible
-and of high quality in terms of writing, grammar, presentation, etc.</p>
-</blockquote>
+<p>California’s ghost towns are the spatial remnants of once-active
+settlements that declined or were entirely abandoned as economic
+conditions, resource availability, and transportation networks shifted.
+While many originated during periods of rapid frontier expansion -
+particularly the 1848 Gold Rush and subsequent silver and copper booms -
+others emerged around railroads, specialized agriculture, or short-lived
+industrial activity. When these supporting systems collapsed or the
+primary resource was exhausted, populations dispersed, leaving behind a
+physical record of speculative migration where the permanence of a
+community was often secondary to the immediate extraction of value.</p>
+<pre class="r"><code># Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(janitor)
+  library(leaflet)
+  library(crosstalk)
+})</code></pre>
+<p>The dataset for this analysis is compiled from tables on Wikipedia’s
+“List of ghost towns in California” page, which documents known
+abandoned or semi-abandoned settlements across the state. The table
+includes information on each town’s status, founding and abandonment
+dates, and geographic coordinates. Because the structure is relatively
+standardized, the scraper retrieves the full table in a single pass and
+prepares it for downstream cleaning and analysis.</p>
+<p>The raw table contains a mixture of structured fields and
+inconsistently formatted text, including embedded citation markers,
+alternate naming conventions, and coordinate strings stored as text. To
+produce a usable dataset, unnecessary columns such as remarks and
+alternate names are removed, and all character fields are cleaned to
+strip bracketed references. The status variable is standardized to
+ensure consistent labeling across categories such as “Abandoned,”
+“Barren,” and “Semi-abandoned.”</p>
+<p>Geographic coordinates are extracted from text using regular
+expressions, separating latitude and longitude into numeric variables
+suitable for mapping. Founding and abandonment dates are similarly
+parsed to extract four-digit years, allowing the calculation of each
+town’s lifespan. These derived variables transform the dataset from a
+descriptive list into a structured record of settlement duration and
+spatial distribution.</p>
+<p>After cleaning, the dataset contains a set of California ghost towns
+with standardized status labels, geographic coordinates, and temporal
+markers. Filtering ensures that only locations within California’s
+geographic bounds are retained, producing a consistent and map-ready
+dataset for analysis of spatial patterns and settlement lifecycles.</p>
+<pre class="r"><code># ---- 1. Scrape table ----
+url &lt;- &quot;https://en.wikipedia.org/wiki/List_of_ghost_towns_in_California&quot;
+
+ca_raw &lt;- read_html(url) %&gt;%
+  html_node(&quot;table.wikitable&quot;) %&gt;%
+  html_table(fill = TRUE) %&gt;%
+  clean_names()
+
+# ---- 2. Clean table ----
+ca_final &lt;- ca_raw %&gt;%
+  # 1. Drop junk columns
+  select(-any_of(c(&quot;x&quot;, &quot;remarks&quot;, &quot;other_names&quot;))) %&gt;%
+  
+  # 2. Clean citation noise (ex. [1])
+  mutate(across(where(is.character), ~str_remove_all(., &quot;\\[\\d+\\]&quot;))) %&gt;%
+  
+  # 3. Standardize the status column
+  mutate(
+    status = str_squish(status), # Remove hidden spaces
+    status = str_to_title(status), # Capitalize: &quot;Abandoned&quot;, &quot;Barren&quot;
+    # Force both &quot;Semiabandoned&quot; and &quot;Semi-Abandoned&quot; into one format
+    status = str_replace_all(status, &quot;Semiabandoned&quot;, &quot;Semi-abandoned&quot;),
+    status = str_replace_all(status, &quot;Semi-Abandoned&quot;, &quot;Semi-abandoned&quot;)
+  ) %&gt;%
+  
+  # 4. Extract numeric data and drop originals
+  mutate(
+    lat = as.numeric(str_extract(latitude_longitude, &quot;\\d+\\.\\d+(?=°N|;)&quot;)),
+    lng = as.numeric(str_extract(latitude_longitude, &quot;(?&lt;=;|\\s)\\d+\\.\\d+(?=°W)&quot;)) * -1,
+    founded_year = as.numeric(str_extract(founded, &quot;\\d{4}&quot;)),
+    abandoned_year = as.numeric(str_extract(abandoned, &quot;\\d{4}&quot;)),
+    lifespan = abandoned_year - founded_year
+  ) %&gt;%
+  
+  # 5. Final cleanup and map-readiness
+  select(-founded, -abandoned, -latitude_longitude) %&gt;%
+
+  # 6. Remove &quot;Out of Bounds&quot; points
+  filter(lat &lt; 42 &amp; lat &gt; 32, 
+         lng &lt; -114 &amp; lng &gt; -125)
+
+head(ca_final)</code></pre>
+<pre><code>## # A tibble: 6 × 8
+##   town         county    status   lat   lng founded_year abandoned_year lifespan
+##   &lt;chr&gt;        &lt;chr&gt;     &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt;        &lt;dbl&gt;          &lt;dbl&gt;    &lt;dbl&gt;
+## 1 Agua Fria    Mariposa  Barren  37.5 -120.         1850           1862       12
+## 2 Agua Mansa   San Bern… Barren  34.0 -117.         1853           1862        9
+## 3 Alma         Santa Cl… Subme…  37.2 -122.         1861           1952       91
+## 4 Amboy        San Bern… Semi-…  34.6 -116.         1858             NA       NA
+## 5 Ashford Mill Inyo      Negle…  35.9 -117.         1914             NA       NA
+## 6 Ash Hill     San Bern… Negle…  34.7 -116.           NA             NA       NA</code></pre>
+<div id="the-mortality-of-ambition-patterns-in-settlement-longevity"
+class="section level3">
+<h3>The Mortality of Ambition: Patterns in Settlement Longevity</h3>
+<p>On average, California ghost towns persisted for approximately 46.4
+years, with a median lifespan of 40 years and a maximum observed
+duration of 119 years. Rather than representing long-lived communities
+that underwent a slow, natural decline, these figures point to a pattern
+of relatively ephemeral settlements shaped by cycles of rapid growth and
+systemic collapse. Many towns appear to have emerged as “pop-up” urban
+centers in response to specific, high-volatility economic opportunities
+and disappeared within a few decades once those opportunities
+diminished.</p>
+<p>The lower end of the distribution reinforces this pattern of
+“transient urbanism.” Several settlements lasted as little as two years,
+suggesting highly speculative ventures or flash-in-the-pan booms that
+failed to establish the foundational infrastructure necessary to sustain
+a stable population. In contrast, the smaller number of towns that
+persisted for over a century likely reflect locations that were either
+economically diversified or strategically situated near evolving
+transportation hubs. This creates a right-skewed distribution in which
+most towns cluster within a narrow lifespan, while a few outliers -
+often those that transitioned from mining to tourism or ranching -
+extend far beyond the mean.</p>
+<p>The total number of towns with valid lifespan data (33) also
+demonstrates a significant limitation regarding data provenance. Many
+entries lack precise founding or abandonment dates, particularly for
+smaller, less-documented camps that existed outside of formal census
+records. Consequently, the analysis is constrained to a subset of
+settlements with more robust historical documentation, which may
+overrepresent prominent communities while understating the true
+frequency of the most short-lived camps.</p>
+<pre class="r"><code>summary_stats &lt;- ca_final %&gt;%
+  filter(!is.na(lifespan)) %&gt;%
+  summarize(
+    Avg_Lifespan = round(mean(lifespan), 1),
+    Median_Lifespan = median(lifespan),
+    Shortest_Life = min(lifespan),
+    Longest_Life = max(lifespan),
+    Total_Towns = n()
+  )
+
+print(summary_stats)</code></pre>
+<pre><code>## # A tibble: 1 × 5
+##   Avg_Lifespan Median_Lifespan Shortest_Life Longest_Life Total_Towns
+##          &lt;dbl&gt;           &lt;dbl&gt;         &lt;dbl&gt;        &lt;dbl&gt;       &lt;int&gt;
+## 1         46.4              40             2          119          33</code></pre>
+<pre class="r"><code># ---- 1. Create a subset of only towns that have a valid lifespan ----
+plotting_data &lt;- ca_final %&gt;%
+  filter(!is.na(lifespan))
+
+# ---- 2. Run the histogram on the new plotting_data ----
+ggplot(plotting_data, aes(x = lifespan)) +
+  geom_histogram(fill = &quot;thistle3&quot;, color = &quot;white&quot;, bins = 20) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    title = &quot;Distribution of California Ghost Town Lifespans&quot;,
+    subtitle = &quot;Boom-and-Bust Patterns of Settlement&quot;,
+    x = &quot;Years of Existence (Lifespan)&quot;,
+    y = &quot;Number of Towns&quot;
+  )</code></pre>
+<p><img src="p08_files/figure-html/summary_statistics_and_lifespan_histogram-1.png" width="672" /></p>
+</div>
+<div
+id="regional-obsolescence-comparative-states-of-decay-across-top-counties"
+class="section level3">
+<h3>Regional Obsolescence: Comparative States of Decay across Top
+Counties</h3>
+<p>The counties with the highest concentrations of ghost towns are
+largely situated in California’s historic mining and railroad districts,
+where settlement patterns were dictated by the geography of resource
+extraction. However, the present-day condition of these sites is not
+consistently documented. Across the primary “hubs” - led by Inyo (32
+towns), San Bernardino (26), and Kern (21) - the most frequent
+designation is “Unknown,” a category that reveals as much about the
+fragility of crowd-sourced historical data as it does about the towns
+themselves.</p>
+<p>While some “Unknown” designations result from geographic isolation in
+remote basins, the prevalence of this label across accessible areas
+reveals a significant metadata lag. In many cases, individual settlement
+pages (such as that of Moore’s Flat) contain detailed qualitative
+descriptions of a site’s “Barren” or “Neglected” state, yet these
+updates are not always reflected in the state-wide summary tables. This
+“information silo” effect means that the transition from a descriptive
+record to a structured data category is often incomplete. Consequently,
+the “Unknown” status frequently reflects a lack of administrative
+synchronization between Wikipedia’s disparate layers of
+documentation.</p>
+<p>Where status information is finalized, a varied picture of
+“post-settlement life” emerges. San Bernardino County, for instance,
+shows a relatively even spread across abandoned, barren, neglected, and
+semi-abandoned classifications. This diversity indicates that decline
+did not follow a uniform path; while some sites have been reclaimed by
+the landscape (“Barren”), others persist in a state of arrested decay
+(“Neglected”) or continue to support vestigial populations
+(“Semi-abandoned”). Collectively, these patterns suggest that the “ghost
+town” label encompasses a wide spectrum of survival, often obscured by
+the limitations of the master record.</p>
+<pre class="r"><code># ---- 1. Identify top 5 counties ----
+top_counties_list &lt;- ca_final %&gt;%
+  count(county, sort = TRUE) %&gt;%
+  slice_max(n, n = 5) %&gt;%
+  pull(county)
+
+
+# ---- 2. Plot ----
+ca_final %&gt;%
+  # Handle empty status strings
+  filter(county %in% top_counties_list) %&gt;%
+  mutate(status = ifelse(status == &quot;&quot; | is.na(status), &quot;Unknown&quot;, status)) %&gt;%
+  
+  ggplot(aes(x = reorder(county, -table(county)[county]), fill = status)) +
+  geom_bar(position = &quot;stack&quot;, color = &quot;white&quot;, linewidth = 0.2) +
+  
+  # Manual color assigments
+  scale_fill_manual(values = c(
+    &quot;Abandoned&quot;      = &quot;firebrick&quot;,
+    &quot;Barren&quot;         = &quot;darkorange&quot;,
+    &quot;Neglected&quot;      = &quot;darkgoldenrod1&quot;,
+    &quot;Semi-abandoned&quot; = &quot;darkolivegreen3&quot;,
+    &quot;Submerged&quot;      = &quot;lightskyblue3&quot;,
+    &quot;Unknown&quot;        = &quot;grey70&quot;
+  )) +
+  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    legend.position = &quot;bottom&quot;,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  labs(
+    title = &quot;Town Status in California&#39;s Ghost Town Hubs&quot;,
+    subtitle = &quot;Variation Across Top 5 Counties&quot;,
+    x = &quot;County&quot;,
+    y = &quot;Number of Towns&quot;,
+    fill = &quot;Status&quot;
+  )</code></pre>
+<p><img src="p08_files/figure-html/status_plot-1.png" width="672" /></p>
+</div>
+<div id="the-vanishing-interior-a-spatial-record-of-resource-extraction"
+class="section level3">
+<h3>The Vanishing Interior: A Spatial Record of Resource Extraction</h3>
+<p>While summary statistics highlight patterns in lifespan and
+classification, the spatial distribution of these sites provides
+essential context for understanding the boom-and-bust cycles of
+California’s development. The interactive map displays the locations of
+recorded ghost towns, revealing a distinct inland bias that reflects the
+contrast between California’s enduring maritime ports and its more
+ephemeral, resource-driven interior.</p>
+<p>However, the geographic record is incomplete due to a form of spatial
+omission: approximately 92 settlements identified in the historical
+record (including prominent sites such as Moore’s Flat) are not
+represented in this visualization because structured coordinate data are
+absent from the primary master table. This absence indicates that,
+although these locations are documented in qualitative historical
+sources, they have not been verified in a format suitable for geospatial
+analysis. Consequently, the points displayed here represent only the
+subset of California’s ruins for which standardized coordinate data are
+available, rather than the full set of historically attested sites.</p>
+<p>Ghost towns concentrate heavily along the Sierra Nevada “Mother Lode”
+and the arid eastern borders, while coastal and urbanized regions
+contain relatively few sites. This distribution reflects the economic
+foundations of these settlements, which were tied to frontier expansion
+rather than long-term metropolitan sustainability. By filtering the data
+by status or county, one can observe how different “eras” of abandonment
+are clustered: the Gold Rush ruins of the north, the railroad depots of
+the central valleys, and the isolated mining camps of the Mojave.
+Ultimately, this spatial record serves as a testament to the volatility
+of the California Dream, mapping the points where ambition was
+eventually overtaken by environmental or economic reality.</p>
+<pre class="r"><code># ---- 1. Prepare the data for the map ----
+map_data &lt;- ca_final %&gt;%
+  mutate(status = ifelse(status == &quot;&quot; | is.na(status), &quot;Unknown&quot;, status))
+
+# ---- 2. Wrap the cleaned data in the SharedData object ----
+shared_ca &lt;- SharedData$new(map_data)
+
+# ---- 3. Create the dashboard ----
+bscols(
+  widths = c(3, 9),
+  list(
+    filter_select(&quot;county_filter&quot;, &quot;Select a County:&quot;, shared_ca, ~county),
+    filter_checkbox(&quot;status_filter&quot;, &quot;Town Status:&quot;, shared_ca, ~status)
+  ),
+  leaflet(shared_ca, height = 550) %&gt;%
+    addProviderTiles(providers$CartoDB.DarkMatter) %&gt;% 
+    addCircleMarkers(
+      lat = ~lat, 
+      lng = ~lng,
+      color = &quot;orangered&quot;,
+      radius = 6,
+      stroke = FALSE,
+      fillOpacity = 0.8,
+      popup = ~paste0(
+        &quot;&lt;div style=&#39;text-align:center;&#39;&gt;&quot;,
+        &quot;&lt;b&gt;&quot;, town, &quot;&lt;/b&gt;&lt;br&gt;&quot;,
+        &quot;County: &quot;, county, &quot;&lt;br&gt;&quot;,
+        &quot;Lifespan: &quot;, ifelse(is.na(lifespan), &quot;Unknown&quot;, paste(lifespan, &quot;yrs&quot;)),
+        &quot;&lt;/div&gt;&quot;
+      )
+    )
+)</code></pre>
+<div class="container-fluid crosstalk-bscols">
+<div class="row">
+<div class="col-xs-3">
+<div id="county_filter" class="form-group crosstalk-input-select crosstalk-input">
+<label class="control-label" for="county_filter">Select a County:</label>
+<div>
+<select multiple></select>
+<script type="application/json" data-for="county_filter">{
+  "items": {
+    "value": ["Alameda", "Butte", "Calaveras", "Contra Costa", "El Dorado", "Fresno", "Imperial", "Inyo", "Kern", "Kings", "Los Angeles", "Madera", "Mariposa", "Merced", "Mono", "Nevada", "Orange", "Placer", "Plumas", "Riverside", "Sacramento", "San Benito", "San Bernardino", "San Diego", "San Joaquin", "San Luis Obispo", "San Mateo", "Santa Clara", "Shasta", "Sierra", "Siskiyou", "Solano", "Sonoma", "Stanislaus", "Trinity", "Tulare", "Tuolumne", "Tuolumne County", "Yuba"],
+    "label": ["Alameda", "Butte", "Calaveras", "Contra Costa", "El Dorado", "Fresno", "Imperial", "Inyo", "Kern", "Kings", "Los Angeles", "Madera", "Mariposa", "Merced", "Mono", "Nevada", "Orange", "Placer", "Plumas", "Riverside", "Sacramento", "San Benito", "San Bernardino", "San Diego", "San Joaquin", "San Luis Obispo", "San Mateo", "Santa Clara", "Shasta", "Sierra", "Siskiyou", "Solano", "Sonoma", "Stanislaus", "Trinity", "Tulare", "Tuolumne", "Tuolumne County", "Yuba"]
+  },
+  "map": {
+    "Alameda": ["41"],
+    "Butte": ["66", "128"],
+    "Calaveras": ["16", "21", "24", "60", "72", "106", "164"],
+    "Contra Costa": ["126", "135"],
+    "El Dorado": ["147"],
+    "Fresno": ["97"],
+    "Imperial": ["81", "133"],
+    "Inyo": ["5", "10", "14", "27", "29", "30", "32", "42", "52", "53", "61", "62", "65", "85", "86", "91", "92", "96", "100", "103", "117", "122", "129", "130", "141", "145", "150", "158", "159", "162", "163", "176"],
+    "Kern": ["7", "39", "50", "54", "58", "59", "68", "79", "82", "83", "84", "90", "93", "115", "116", "124", "127", "132", "140", "143", "151"],
+    "Kings": ["33", "88", "167"],
+    "Los Angeles": ["45", "98", "99", "102", "107"],
+    "Madera": ["63"],
+    "Mariposa": ["1", "25", "28", "73", "75", "77", "112", "121", "138"],
+    "Merced": ["108"],
+    "Mono": ["13", "17", "40", "105", "113"],
+    "Nevada": ["173", "175"],
+    "Orange": ["11"],
+    "Placer": ["35", "78", "171"],
+    "Plumas": ["153"],
+    "Riverside": ["43", "94", "110", "125", "134", "161", "165"],
+    "Sacramento": ["71", "114", "123"],
+    "San Benito": ["120"],
+    "San Bernardino": ["2", "4", "6", "8", "9", "12", "19", "20", "48", "57", "67", "69", "80", "87", "101", "131", "136", "139", "142", "144", "148", "155", "157", "160", "169", "170"],
+    "San Diego": ["18", "31", "34", "44", "168"],
+    "San Joaquin": ["23", "46", "146"],
+    "San Luis Obispo": ["89"],
+    "San Mateo": ["137"],
+    "Santa Clara": ["3", "74", "95", "119", "174"],
+    "Shasta": ["55", "76", "154"],
+    "Sierra": ["56"],
+    "Siskiyou": ["15", "64", "118"],
+    "Solano": ["26"],
+    "Sonoma": ["109", "172"],
+    "Stanislaus": ["47"],
+    "Trinity": ["22", "36", "37", "38", "70", "111"],
+    "Tulare": ["49", "156"],
+    "Tuolumne": ["51", "149", "152"],
+    "Tuolumne County": ["104"],
+    "Yuba": ["166"]
+  },
+  "group": ["SharedData6456e192"]
+}</script>
+</div>
+</div>
+<div id="status_filter" class="form-group crosstalk-input-checkboxgroup crosstalk-input">
+<label class="control-label" for="status_filter">Town Status:</label>
+<div class="crosstalk-options-group">
+<div class="checkbox">
+<label>
+<input type="checkbox" name="status_filter" value="Abandoned"/>
+<span>Abandoned</span>
+</label>
+</div>
+<div class="checkbox">
+<label>
+<input type="checkbox" name="status_filter" value="Barren"/>
+<span>Barren</span>
+</label>
+</div>
+<div class="checkbox">
+<label>
+<input type="checkbox" name="status_filter" value="Neglected"/>
+<span>Neglected</span>
+</label>
+</div>
+<div class="checkbox">
+<label>
+<input type="checkbox" name="status_filter" value="Semi-abandoned"/>
+<span>Semi-abandoned</span>
+</label>
+</div>
+<div class="checkbox">
+<label>
+<input type="checkbox" name="status_filter" value="Submerged"/>
+<span>Submerged</span>
+</label>
+</div>
+<div class="checkbox">
+<label>
+<input type="checkbox" name="status_filter" value="Unknown"/>
+<span>Unknown</span>
+</label>
+</div>
+</div>
+<script type="application/json" data-for="status_filter">{
+  "map": {
+    "Abandoned": ["8", "11", "12", "13", "14", "18", "20", "24", "31", "34", "35", "36", "37", "38", "41", "43", "46", "148"],
+    "Barren": ["1", "2", "7", "9", "15", "16", "22", "25", "32", "33", "39", "40", "44", "45", "47", "98", "137", "139", "144"],
+    "Neglected": ["5", "6", "10", "19", "23", "26", "29", "30", "160", "164"],
+    "Semi-abandoned": ["4", "17", "27", "28", "42", "48", "69", "161"],
+    "Submerged": ["3", "21", "114", "147"],
+    "Unknown": ["49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "99", "100", "101", "102", "103", "104", "105", "106", "107", "108", "109", "110", "111", "112", "113", "115", "116", "117", "118", "119", "120", "121", "122", "123", "124", "125", "126", "127", "128", "129", "130", "131", "132", "133", "134", "135", "136", "138", "140", "141", "142", "143", "145", "146", "149", "150", "151", "152", "153", "154", "155", "156", "157", "158", "159", "162", "163", "165", "166", "167", "168", "169", "170", "171", "172", "173", "174", "175", "176"]
+  },
+  "group": ["SharedData6456e192"]
+}</script>
+</div>
+</div>
+<div class="col-xs-9">
+<div id="htmlwidget-9d1ee611f1c31e0fb61e" style="width:100%;height:550px;" class="leaflet html-widget"></div>
+<script type="application/json" data-for="htmlwidget-9d1ee611f1c31e0fb61e">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addSelect","args":["SharedData6456e192"]},{"method":"addProviderTiles","args":["CartoDB.DarkMatter",null,null,{"errorTileUrl":"","noWrap":false,"detectRetina":false}]},{"method":"addCircleMarkers","args":[[37.485,34.04194,37.18,34.55694,35.91889,34.70694,35.30472,35.31472,34.58278,36.04778,33.82049,34.30111,37.9375,36.81917,41.3007,38.3708,38.21222,33.07806,34.52,34.94889,38.21333,40.83139,37.62951,38.02833,37.64444,38.29278,36.53771,37.65,36.70667,36.96056,33.08611,36.17667,35.96898,32.98472,39.08056,40.71944,40.86278,40.94389,35.27222,38.17028,37.465,36.08861,33.8575,33.0875,34.2297,38.23472,37.637317,34.73361,35.891111,35.60166,37.97222,36.19133,36.45056,35.4025,40.41556,39.74028,34.91917,35.00167,35.42694,38.19113,36.17944,36.0119,37.32472,41.29667,36.14667,39.45254,35.28889,35.47389,34.80361,40.77361,38.55778,37.99667,37.75833,37.1568904,37.67794,40.505556,37.43944,39.10861,35.65556,35.545,32.73111,35.42222,35.25972,35.71417,36.81,36.48722,35.0125,36.42361,35.36111,35.73667,36.84667,36.57944,35.71056,33.6525,37.19639,36.24333,36.43833,34.30167,34.50639,36.24583,34.72111,34.3627,36.74,38.02333,38.3625,38.0125,34.379,37.52306,38.77611,33.86111,40.85139,37.51472,37.8875,38.7035,35.69186,34.92306,35.89778,41.24194,37.18,36.41694,37.70333,35.81083,38.55778,35.005,33.51278,37.95778,35.325,39.59389,37.40083,36.11833,33.99,35.6025,33.02306,33.76,38.04611,34.98028,37.40306,37.53944,34.66,35.00583,36.00694,34.08361,35.29684,34.17472,36.80389,37.67,38.75806,34.54083,38.02056,36.50556,35.62139,37.825,40.11056,40.59222,34.62667,36.46389,35.37111,36.43556,35.92111,34.62917,33.87806,37.3325,36.52472,37.934444,33.70306,39.21694,36.05222,32.97611,35.82833,35.32722,39.175,38.20917,39.41139,37.13917,39.20917,37.18278],[-120.02028,-117.36389,-121.98,-115.745,-116.68472,-116.055,-119.60083,-117.60917,-115.87556,-117.22333,-117.63878,-116.88417,-119.26056,-118.13056,-123.1431,-120.36642,-119.01222,-116.61722,-115.51278,-116.86417,-120.93528,-123.05278,-121.52797,-120.50667,-120.08944,-121.99611,-117.795031,-119.70528,-116.88222,-118.19667,-116.645,-117.64694,-119.93929,-116.57083,-120.68944,-122.73361,-123.03667,-123.38667,-118.62611,-119.1975,-121.97444,-117.96111,-115.48722,-116.61111,-117.7698,-121.18083,-120.902783,-115.245,-118.915556,-117.90295,-120.47139,-116.66495,-116.85222,-117.79,-122.53444,-120.90889,-115.06278,-118.16889,-117.74583,-120.75407,-116.61639,-116.27456,-119.77083,-123.36,-117.97583,-121.64108,-115.10333,-117.86833,-116.45222,-123.12833,-121.41778,-120.68556,-119.59528,-121.9788476,-120.23101,-122.541667,-120.19694,-120.85944,-118.46111,-115.53528,-114.62972,-118.49306,-118.9675,-118.43667,-118.325,-117.87389,-115.65361,-119.69389,-120.21556,-118.72111,-117.05917,-116.67,-117.83028,-117.13556,-121.98833,-116.49889,-119.7175,-117.83917,-117.82722,-117.43472,-116.16,-118.5074,-118.08056,-120.37972,-119.1125,-120.49861,-118.611,-120.3325,-122.83944,-114.80222,-122.78306,-120.06472,-118.95944,-121.1174,-118.91759,-117.87222,-117.90111,-123.28084,-121.83556,-120.67444,-120.19194,-116.10417,-121.41778,-117.81889,-115.92722,-121.88056,-119.65639,-121.52944,-118.34556,-117.09528,-117.7175,-118.60361,-114.61111,-117.23333,-122.02083,-115.50528,-122.41694,-120.20444,-116.15083,-118.185,-117.36889,-114.84972,-119.05678,-114.99417,-118.12611,-121.26611,-121.05833,-115.68889,-120.38083,-116.72361,-118.47417,-120.1975,-121.08472,-122.47778,-115.98583,-118.65083,-116.115,-117.1475,-117.90278,-116.17028,-114.795,-118.40444,-117.90389,-120.74,-117.37472,-121.31861,-119.96435,-116.35028,-117.33167,-115.24972,-120.64806,-122.42667,-120.86806,-121.94694,-120.9,-118.26],6,null,null,{"interactive":true,"className":"","stroke":false,"color":"orangered","weight":5,"opacity":0.5,"fill":true,"fillColor":"orangered","fillOpacity":0.8},null,null,["<div style='text-align:center;'><b>Agua Fria<\/b><br>County: Mariposa<br>Lifespan: 12 yrs<\/div>","<div style='text-align:center;'><b>Agua Mansa<\/b><br>County: San Bernardino<br>Lifespan: 9 yrs<\/div>","<div style='text-align:center;'><b>Alma<\/b><br>County: Santa Clara<br>Lifespan: 91 yrs<\/div>","<div style='text-align:center;'><b>Amboy<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Ashford Mill<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Ash Hill<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Asphalto<\/b><br>County: Kern<br>Lifespan: 39 yrs<\/div>","<div style='text-align:center;'><b>Atolia<\/b><br>County: San Bernardino<br>Lifespan: 59 yrs<\/div>","<div style='text-align:center;'><b>Bagdad<\/b><br>County: San Bernardino<br>Lifespan: 90 yrs<\/div>","<div style='text-align:center;'><b>Ballarat<\/b><br>County: Inyo<br>Lifespan: 71 yrs<\/div>","<div style='text-align:center;'><b>Beeks Place<\/b><br>County: Orange<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Belleville<\/b><br>County: San Bernardino<br>Lifespan: 40 yrs<\/div>","<div style='text-align:center;'><b>Bennettville<\/b><br>County: Mono<br>Lifespan: 30 yrs<\/div>","<div style='text-align:center;'><b>Bend City<\/b><br>County: Inyo<br>Lifespan: 9 yrs<\/div>","<div style='text-align:center;'><b>Bestville<\/b><br>County: Siskiyou<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Blue Mountain City<\/b><br>County: Calaveras<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Bodie<\/b><br>County: Mono<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Branson City<\/b><br>County: San Diego<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Cadiz<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Calico<\/b><br>County: San Bernardino<br>Lifespan: 26 yrs<\/div>","<div style='text-align:center;'><b>Camanche<\/b><br>County: Calaveras<br>Lifespan: 113 yrs<\/div>","<div style='text-align:center;'><b>Canon City <\/b><br>County: Trinity<br>Lifespan: 40 yrs<\/div>","<div style='text-align:center;'><b>Carnegie/Tesla<\/b><br>County: San Joaquin<br>Lifespan: 13 yrs<\/div>","<div style='text-align:center;'><b>Carson Hill<\/b><br>County: Calaveras<br>Lifespan: 82 yrs<\/div>","<div style='text-align:center;'><b>Cat Town<\/b><br>County: Mariposa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Cement<\/b><br>County: Solano<br>Lifespan: 25 yrs<\/div>","<div style='text-align:center;'><b>Cerro Gordo<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Chinquapin<\/b><br>County: Mariposa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Chloride City<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Chrysopolis<\/b><br>County: Inyo<br>Lifespan: 47 yrs<\/div>","<div style='text-align:center;'><b>Coleman City<\/b><br>County: San Diego<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Coso<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Cox & Clark Trading Post<\/b><br>County: Kings<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Cuyamaca City<\/b><br>County: San Diego<br>Lifespan: 19 yrs<\/div>","<div style='text-align:center;'><b>Deadwood<\/b><br>County: Placer<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Deadwood<\/b><br>County: Trinity<br>Lifespan: 64 yrs<\/div>","<div style='text-align:center;'><b>Dedrick<\/b><br>County: Trinity<br>Lifespan: 51 yrs<\/div>","<div style='text-align:center;'><b>Denny<\/b><br>County: Trinity<br>Lifespan: 119 yrs<\/div>","<div style='text-align:center;'><b>Desert Spring<\/b><br>County: Kern<br>Lifespan: 16 yrs<\/div>","<div style='text-align:center;'><b>Dogtown<\/b><br>County: Mono<br>Lifespan: 2 yrs<\/div>","<div style='text-align:center;'><b>Drawbridge<\/b><br>County: Alameda<br>Lifespan: 103 yrs<\/div>","<div style='text-align:center;'><b>Dunmovin<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Eagle Mountain<\/b><br>County: Riverside<br>Lifespan: 55 yrs<\/div>","<div style='text-align:center;'><b>Eastwood<\/b><br>County: San Diego<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Eldoradoville<\/b><br>County: Los Angeles<br>Lifespan: 3 yrs<\/div>","<div style='text-align:center;'><b>Elliott<\/b><br>County: San Joaquin<br>Lifespan: 55 yrs<\/div>","<div style='text-align:center;'><b>Empire City<\/b><br>County: Stanislaus<br>Lifespan: 12 yrs<\/div>","<div style='text-align:center;'><b>Essex<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Fountain Springs<\/b><br>County: Tulare<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Freeman Junction<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>French Flat<\/b><br>County: Tuolumne<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Furnace<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Furnace Creek Inn<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Garlock<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Gas Point<\/b><br>County: Shasta<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Gibsonville<\/b><br>County: Sierra<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Goffs<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Gold Town<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Goler Heights<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Greasertown<\/b><br>County: Calaveras<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Greenwater<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Gerstley<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Grub Gulch<\/b><br>County: Madera<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Gullion's Bar<\/b><br>County: Siskiyou<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Haiwee<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Hamilton<\/b><br>County: Butte<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Hart<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Hatfields Camp<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Hector<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Helena<\/b><br>County: Trinity<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Hoboken<\/b><br>County: Sacramento<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Hodson<\/b><br>County: Calaveras<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Hokokwito<\/b><br>County: Mariposa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Holy City<\/b><br>County: Santa Clara<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Horseshoe Bend<\/b><br>County: Mariposa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Igo<\/b><br>County: Shasta<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Indian Gulch<\/b><br>County: Mariposa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Iowa Hill<\/b><br>County: Placer<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Isabella<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Ivanpah<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Jaeger City<\/b><br>County: Imperial<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Joe Walker Town<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Kern River Slough<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Kernville<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Kearsarge<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Keeler<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Kelso<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Kingston<\/b><br>County: Kings<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>La Panza<\/b><br>County: San Luis Obispo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Lavers' Crossing<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Leadfield<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Lee<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Leliter<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Leon<\/b><br>County: Riverside<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Lexington<\/b><br>County: Santa Clara<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Lila C<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Lillis<\/b><br>County: Fresno<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Little Cienega<\/b><br>County: Los Angeles<br>Lifespan: 64 yrs<\/div>","<div style='text-align:center;'><b>Llano del Rio<\/b><br>County: Los Angeles<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Lookout City<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Ludlow<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Lyons Station<\/b><br>County: Los Angeles<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Manzanar<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Martinez<\/b><br>County: Tuolumne County<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Masonic<\/b><br>County: Mono<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Melones<\/b><br>County: Calaveras<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Mentryville<\/b><br>County: Los Angeles<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Merced Falls<\/b><br>County: Merced<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Mercuryville<\/b><br>County: Sonoma<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Midland<\/b><br>County: Riverside<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Minersville<\/b><br>County: Trinity<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Mount Ophir<\/b><br>County: Mariposa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Mono Mills<\/b><br>County: Mono<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Mormon Island<\/b><br>County: Sacramento<br>Lifespan: 8 yrs<\/div>","<div style='text-align:center;'><b>Mountain House<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Muroc<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Narka<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Negro Flat<\/b><br>County: Siskiyou<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>New Almaden<\/b><br>County: Santa Clara<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>New Idria<\/b><br>County: San Benito<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Newtown<\/b><br>County: Mariposa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Noonday Camp<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Norristown<\/b><br>County: Sacramento<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>North Muroc<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>North Shore<\/b><br>County: Riverside<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Nortonville<\/b><br>County: Contra Costa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Olig<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Oregon City<\/b><br>County: Butte<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Owensville<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Panamint City<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Pasinogna<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Petersburg<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Picacho<\/b><br>County: Imperial<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Pinacate<\/b><br>County: Riverside<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Port Chicago<\/b><br>County: Contra Costa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Providence<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Purissima<\/b><br>County: San Mateo<br>Lifespan: 32 yrs<\/div>","<div style='text-align:center;'><b>Quartzburg<\/b><br>County: Mariposa<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Ragtown<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Reefer City<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Reilly<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Rice<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Rio Bravo<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Sablon<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>San Carlos<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>San Joaquin City<\/b><br>County: San Joaquin<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Salmon Falls<\/b><br>County: El Dorado<br>Lifespan: 100 yrs<\/div>","<div style='text-align:center;'><b>Saltus<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Sawmill Flat<\/b><br>County: Tuolumne<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Schwaub<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Scovern Hot Springs<\/b><br>County: Kern<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Second Garrotte<\/b><br>County: Tuolumne<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Seneca<\/b><br>County: Plumas<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Shasta<\/b><br>County: Shasta<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Siberia<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Silver City, Tulare<\/b><br>County: Tulare<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Silver Lake<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Skidoo<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Sodan<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Stedman<\/b><br>County: San Bernardino<br>Lifespan: 32 yrs<\/div>","<div style='text-align:center;'><b>Styx<\/b><br>County: Riverside<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Sunland<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Swansea<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Telegraph City<\/b><br>County: Calaveras<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Terra Cotta<\/b><br>County: Riverside<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Timbuctoo<\/b><br>County: Yuba<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Vaca Adobe<\/b><br>County: Kings<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Vallecito<\/b><br>County: San Diego<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Valley Wells<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Vanderbilt<\/b><br>County: San Bernardino<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Westville<\/b><br>County: Placer<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Wingo<\/b><br>County: Sonoma<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Woolsey Flat<\/b><br>County: Nevada<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Wrights<\/b><br>County: Santa Clara<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>You Bet<\/b><br>County: Nevada<br>Lifespan: Unknown<\/div>","<div style='text-align:center;'><b>Zurich<\/b><br>County: Inyo<br>Lifespan: Unknown<\/div>"],null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},{"ctKey":["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90","91","92","93","94","95","96","97","98","99","100","101","102","103","104","105","106","107","108","109","110","111","112","113","114","115","116","117","118","119","120","121","122","123","124","125","126","127","128","129","130","131","132","133","134","135","136","137","138","139","140","141","142","143","144","145","146","147","148","149","150","151","152","153","154","155","156","157","158","159","160","161","162","163","164","165","166","167","168","169","170","171","172","173","174","175","176"],"ctGroup":"SharedData6456e192"}]}],"limits":{"lat":[32.73111,41.3007],"lng":[-123.38667,-114.61111]}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</div>
+</div>
 
 
 
