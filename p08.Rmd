@@ -93,7 +93,7 @@ print(summary_stats)
 plotting_data <- ca_final %>%
   filter(!is.na(lifespan))
 
-# ---- 2. Run the histogram on the new plotting_data ----
+# ---- 2. Plot ----
 ggplot(plotting_data, aes(x = lifespan)) +
   geom_histogram(fill = "thistle3", color = "white", bins = 20) +
   theme_minimal() +
