@@ -48,7 +48,7 @@ ca_final <- ca_raw %>%
     status = str_replace_all(status, "Semiabandoned", "Semi-abandoned"),
     status = str_replace_all(status, "Semi-Abandoned", "Semi-abandoned")
   ) %>%
-  
+
   # Extract numeric data and drop originals
   mutate(
     lat = as.numeric(str_extract(latitude_longitude, "\\d+\\.\\d+(?=°N|;)")),
