@@ -76,7 +76,7 @@ The lower end of the distribution reinforces this pattern of "transient urbanism
 
 The total number of towns with valid lifespan data (33) also demonstrates a significant limitation regarding data provenance. Many entries lack precise founding or abandonment dates, particularly for smaller, less-documented camps that existed outside of formal census records. Consequently, the analysis is constrained to a subset of settlements with more robust historical documentation, which may overrepresent prominent communities while understating the true frequency of the most short-lived camps.
 
-```{r summary_statistics_and_lifespan_histogram}
+```{r summary_statistics_and_lifespan_histogram, fig.width=14, fig.height=10}
 summary_stats <- ca_final %>%
   filter(!is.na(lifespan)) %>%
   summarize(
@@ -118,7 +118,7 @@ While some "Unknown" designations result from geographic isolation in remote bas
 
 Where status information is finalized, a varied picture of "post-settlement life" emerges. San Bernardino County, for instance, shows a relatively even spread across abandoned, barren, neglected, and semi-abandoned classifications. This diversity indicates that decline did not follow a uniform path; while some sites have been reclaimed by the landscape ("Barren"), others persist in a state of arrested decay ("Neglected") or continue to support vestigial populations ("Semi-abandoned"). Collectively, these patterns suggest that the “ghost town” label encompasses a wide spectrum of survival, often obscured by the limitations of the master record.
 
-```{r status_plot}
+```{r status_plot, fig.width=14, fig.height=10}
 # ---- 1. Identify top 5 counties ----
 top_counties_list <- ca_final %>%
   count(county, sort = TRUE) %>%
@@ -169,7 +169,7 @@ However, the geographic record is incomplete due to a form of spatial omission: 
 
 Ghost towns concentrate heavily along the Sierra Nevada "Mother Lode" and the arid eastern borders, while coastal and urbanized regions contain relatively few sites. This distribution reflects the economic foundations of these settlements, which were tied to frontier expansion rather than long-term metropolitan sustainability. By filtering the data by status or county, one can observe how different "eras" of abandonment are clustered: the Gold Rush ruins of the north, the railroad depots of the central valleys, and the isolated mining camps of the Mojave. Ultimately, this spatial record serves as a testament to the volatility of the California Dream, mapping the points where ambition was eventually overtaken by environmental or economic reality.
 
-```{r interactive_map}
+```{r interactive_map, fig.width=14, fig.height=10}
 # ---- 1. Prepare the data for the map ----
 map_data <- ca_final %>%
   mutate(status = ifelse(status == "" | is.na(status), "Unknown", status))
