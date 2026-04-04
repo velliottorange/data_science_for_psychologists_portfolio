@@ -1,5 +1,224 @@
 ---
-title: "Portfolio 9"
+title: "
+name: Verity Elliott
+output: html_document
 ---
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+```{r load-packages, warning = FALSE, message=FALSE}
+# Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(janitor)
+})
+```
+
+```{r retrieve_data}
+# ---- 1. Scrape table ----
+url <- "https://en.wikipedia.org/wiki/List_of_oldest_trees"
+
+trees_raw <- read_html(url) %>%
+  html_node("table.wikitable") %>%
+  html_table(fill = TRUE) %>%
+  clean_names()
+
+# ---- 2. Clean table ----
+trees_final <- trees_raw %>%
+  mutate(
+    # Standardize tree names
+    name = str_trim(name),
+    name = str_replace_all(name, "([a-z])(\\()", "\\1 \\2"),
+    
+    # Fix species "squashing"
+    species = str_replace_all(species, "([a-z])([A-Z])", "\\1 / \\2"),
+    
+    # Clean citation noise (ex. [1])
+    across(where(is.character), ~str_remove_all(., "\\[.*?\\]"))
+  ) %>%
+  mutate(
+    # Define tree status
+    status = ifelse(str_detect(notes, "(?i)dead"), "Dead", "Living"),
+    
+    # Extract ages
+    reported_age = as.numeric(str_extract(str_remove_all(age_years, ","), "\\d+")),
+    
+    # Handle BCE years
+    raw_num = as.numeric(str_extract(year_germinated, "\\d+")),
+    germination_year = case_when(
+      str_detect(year_germinated, "BC|BCE") ~ raw_num * -1,
+      TRUE ~ raw_num
+    )
+  ) %>%
+  # Fix duplicate names
+  group_by(name) %>%
+  mutate(name = if (n() > 1) {
+      paste0(name, " (", row_number(), ")")
+  } else {
+      name
+  }) %>%
+ungroup() %>%
+  
+  # Clean-up
+  filter(!is.na(germination_year), !is.na(reported_age)) %>%
+  select(name, species, location, country, germination_year, reported_age, status)
+
+head(trees_final)
+```
+
+```{r timeline_plot}
+# ---- 1. Define historical milestones ----
+milestones <- data.frame(
+  year = c(-2560, -753, 476, 1492, 1945),
+  event = c("Pyramids Built", "Rome Founded", "Fall of Rome", 
+            "Columbus", "Nuclear Age")
+)
+
+# ---- 2. Pre-process to cap "Living" lifelines at the current year ----
+trees_plot <- trees_final %>%
+  mutate(
+    # If living, end at 2026; if dead, end at germination + age
+    end_year = if_else(status == "Living", 2026, germination_year + reported_age)
+  )
+
+# ---- 3. Set height for the milestone "shelf" ----
+top_tree <- nrow(trees_plot)
+shelf_height <- top_tree + 2
+
+# ---- 4. Plot ----
+ggplot(trees_plot) +
+  # Tree lifeline
+  geom_segment(aes(x = germination_year, 
+                   xend = end_year,     
+                   y = reorder(name, germination_year), 
+                   yend = name, 
+                   color = status), 
+               linewidth = 1.2, alpha = 0.8) +
+  
+  # Vertical lines connecting dates to labels
+  geom_segment(data = milestones, 
+               aes(x = year, xend = year, y = top_tree + 0.5, yend = shelf_height - 0.2),
+               linetype = "solid", color = "grey70", linewidth = 0.3) +
+  
+  # Single horizontal line for labels
+  geom_text(data = milestones, 
+            aes(x = year, y = shelf_height, label = event), 
+            size = 2.8, color = "grey30", fontface = "italic", vjust = 0) +
+  
+  scale_color_manual(values = c("Living" = "darkolivegreen", "Dead" = "firebrick4")) +
+  theme_minimal() +
+  labs(
+    title = "Witnesses to History: A Chronology of the World's Oldest Trees",
+    subtitle = "Individual tree lifespans compared to major human events (capped at 2026)",
+    x = "Timeline",
+    y = "",
+    color = "Status"
+  ) +
+  
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    plot.subtitle = element_text(hjust = 0.5, size = 10, margin = margin(b = 10)),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  ) +
+  
+  expand_limits(y = shelf_height + 2) +
+  
+  scale_x_continuous(
+    breaks = seq(-3000, 2000, 500),
+    labels = c("3000 BCE", "2500 BCE", "2000 BCE", "1500 BCE", "1000 BCE", 
+               "500 BCE", "0", "500 CE", "1000 CE", "1500 CE", "2000 CE")
+  )
+```
+
+```{r age_location_plot}
+# ---- 1. Pre-process data ----
+geo_data_final <- trees_final %>%
+  # Identify species names
+  mutate(
+    species_short = case_when(
+      str_detect(species, "(?i)longaeva")      ~ "Bristlecone Pine",
+      str_detect(species, "(?i)giganteum")     ~ "Giant Sequoia",
+      str_detect(species, "(?i)grandis")       ~ "Sierra Juniper",
+      str_detect(species, "(?i)distichum")     ~ "Bald Cypress",
+      str_detect(species, "(?i)sempervirens")  ~ "Coast Redwood",
+      str_detect(species, "(?i)Fitzroya")      ~ "Alerce",        
+      TRUE ~ "Other"
+    ),
+    
+    # Standardize tree location names
+    location_clean = location %>%
+      str_replace_all("\\s*\\(([^)]+)\\)", ", \\1") %>% 
+      str_replace_all(",\\s+", ",") %>%
+      str_extract("[^,]+,[^,]+$") %>% 
+      str_replace(",", ", ") %>%
+      str_trim()
+  ) %>%
+  # Only retain species with 2 or more specimines
+  group_by(species_short) %>%
+  filter(n() >= 2 & species_short != "Other") %>%
+  ungroup()
+
+# ---- 2. Plot ----
+ggplot(geo_data_final, aes(x = reported_age, y = reorder(location_clean, reported_age), color = species_short)) +
+  geom_segment(aes(x = 0, xend = reported_age, y = location_clean, yend = location_clean), 
+               color = "grey92", linewidth = 0.5) +
+  geom_point(size = 4, alpha = 0.9) +
+  
+  # Manual color assignment
+  scale_color_manual(values = c(
+    "Bristlecone Pine" = "goldenrod3",
+    "Giant Sequoia"    = "darkseagreen3",
+    "Sierra Juniper"   = "cadetblue3",
+    "Bald Cypress"     = "indianred3"
+  )) +
+  
+  theme_minimal() +
+  labs(
+    title = "Sanctuaries of Deep Time",
+    subtitle = "Age distribution of the four most populous ancient tree species",
+    x = "Reported Age (Years)",
+    y = "",
+    color = "Species"
+  ) +
+  
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, color = "grey40", hjust = 0.5), 
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(size = 9)
+  )
+```
+
+```{r species_boxplot}
+ggplot(geo_data_final, aes(x = reported_age, y = reorder(species_short, reported_age, FUN = median), fill = species_short)) +
+  
+  # The Boxplot shows the median and quartiles
+  geom_boxplot(alpha = 0.7, outlier.colour = "black", outlier.shape = 1) +
+  
+  # Manual color assignment
+  scale_fill_manual(values = c(
+    "Bristlecone Pine" = "goldenrod3", 
+    "Giant Sequoia"    = "darkseagreen3", 
+    "Sierra Juniper"   = "cadetblue3", 
+    "Bald Cypress"     = "indianred3"
+  )) +
+  
+  theme_minimal() +
+  labs(
+    title = "Ancient Tree Longevity Profiles",
+    subtitle = "Comparison the median age and variance across the four most populous species",
+    x = "Reported Age (Years)",
+    y = "",
+    fill = "Species"
+  ) +
+  
+  theme(
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, color = "grey40", hjust = 0.5),
+    panel.grid.major.y = element_blank()
+  )
+```
