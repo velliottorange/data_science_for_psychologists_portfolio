@@ -1,8 +1,12 @@
 ---
-title: "
+title: "Arboreal Chronology: The Living Record of Post-Pleistocene Resilience"
 name: Verity Elliott
 output: html_document
 ---
+
+Ancient trees represent one of the most continuous living connections to the deep past, persisting across millennia of environmental change, climatic fluctuation, and human history. Unlike archaeological artifacts or written records, these organisms are not static remnants but ongoing biological systems whose lifespans extend far beyond the temporal scale of human institutions. Some of the oldest known specimens germinated before the rise of classical civilizations and remain alive today, functioning as living archives of ecological stability and resilience.
+
+Longevity in trees is not randomly distributed across the plant kingdom but is concentrated within a small number of highly specialized species adapted to marginal environments. Harsh conditions - such as aridity, poor soils, or high elevation - often suppress competition and slow growth, enabling certain species to prioritize durability over rapid expansion. In this way, extreme age is less a product of ideal conditions than of ecological constraint, where survival depends on persistence rather than productivity.
 
 ```{r load-packages, warning = FALSE, message=FALSE}
 # Load all required packages quietly
@@ -12,6 +16,12 @@ suppressMessages({
   library(janitor)
 })
 ```
+
+The dataset for this analysis is compiled from the Wikipedia page “List of oldest trees,” which aggregates verified and estimated ages of individual specimens across multiple species and geographic regions. The table includes tree names, species classifications, locations, reported ages, and germination dates, though the structure contains inconsistencies typical of crowd-sourced records.
+
+To prepare the dataset for analysis, character fields are cleaned to remove citation artifacts and formatting irregularities, and species names are standardized to address inconsistent capitalization and concatenation. Tree status is inferred from descriptive notes, classifying each specimen as either “Living” or “Dead.” Reported ages are extracted as numeric values, while germination years are parsed and converted into a continuous timeline, with BCE dates represented as negative values.
+
+Duplicate tree names are disambiguated to preserve unique identifiers, and observations lacking valid temporal data are removed. These steps transform a semi-structured descriptive table into a consistent dataset suitable for chronological comparison and species-level analysis, while still reflecting the inherent limitations of historical and biological estimation.
 
 ```{r retrieve_data}
 # ---- 1. Scrape table ----
@@ -65,7 +75,15 @@ ungroup() %>%
 head(trees_final)
 ```
 
-```{r timeline_plot}
+### Witnesses to Civilization: Tree Lifespans in Historical Context
+
+When situated along a unified timeline, the lifespans of the world’s oldest trees reveal a scale of continuity that contrasts with the episodic nature of human history. In this dataset, individual specimens span nearly four millennia - with germination dates ranging from approximately 2900 BCE to the early medieval period. The oldest recorded tree exceeds 4,900 years in age, while the median lifespan across all observations is close to 2,500 years, showing that extreme longevity is common within this group rather than limited to a single outlier.
+
+Several living trees predate major civilizational milestones that are often treated as foundational in historical narratives. Two specimens were already established before the construction of the Egyptian pyramids, and eight predate the traditional founding of Rome. By the end of the classical era - represented here by the fall of Rome in 476 CE - the majority of trees in the dataset (18 out of 19) had already germinated. These organisms do not simply intersect with human history; they persist across nearly its entire recorded span.
+
+The distribution of ages reinforces this pattern. All sampled trees exceed 1,000 years in age, with 14 surpassing 2,000 years and 7 exceeding 3,000 years. Most of these individuals remain alive today, indicating that extreme age is not only a feature of the past but an ongoing biological condition. Rather than existing as relics, these trees continue to function as living systems whose lifespans connect ancient and modern worlds.
+
+```{r timeline_plot, fig.width=14, fig.height=10}
 # ---- 1. Define historical milestones ----
 milestones <- data.frame(
   year = c(-2560, -753, 476, 1492, 1945),
@@ -108,7 +126,7 @@ ggplot(trees_plot) +
   theme_minimal() +
   labs(
     title = "Witnesses to History: A Chronology of the World's Oldest Trees",
-    subtitle = "Individual tree lifespans compared to major human events (capped at 2026)",
+    subtitle = "Individual tree lifespans contextualized within major historical milestones",
     x = "Timeline",
     y = "",
     color = "Status"
@@ -132,7 +150,15 @@ ggplot(trees_plot) +
   )
 ```
 
-```{r age_location_plot}
+### Sanctuaries of Deep Time: The Geographic Distribution of Ancient Trees
+
+The geographic distribution of ancient trees reveals that extreme longevity is not evenly dispersed but concentrated within specific ecological niches. In this dataset, the pattern is also geographically uneven, with 15 of 19 recorded specimens located in the United States and only a small number distributed across Canada, Chile, China, and Italy. Species such as bristlecone pine, giant sequoia, and bald cypress dominate the upper ranges of age, reflecting evolutionary strategies tailored to distinct environmental pressures. Giant sequoias account for the largest number of observations (4 trees), followed by bald cypress and Sierra juniper (3 each), while bristlecone pine, though represented by only 2 specimens, exhibits the highest recorded ages, reaching up to 4,960 years.
+
+These species are often found in regions where growth is slow and competition is limited, conditions that favor long-term survival over rapid expansion. Rather than forming dense clusters, the oldest specimens tend to exist as isolated individuals or small populations, reinforcing the idea that extreme age is an outlier condition even within long-lived species. The environments that sustain them - high-altitude basins, floodplains, or protected groves - function as "refugia" where disturbance is minimized and ecological stability can persist across centuries.
+
+The distribution also reflects a bias in documentation and preservation. Many of the most intensively studied ancient trees are located in protected areas or regions with established research infrastructure, and the strong concentration of observations within a single country suggests that the global record of extreme longevity may be incomplete. As a result, the observed pattern is both ecological and epistemological: it maps not only where ancient trees survive, but where they have been measured and recorded.
+
+```{r age_location_plot, fig.width=14, fig.height=10}
 # ---- 1. Pre-process data ----
 geo_data_final <- trees_final %>%
   # Identify species names
@@ -177,8 +203,8 @@ ggplot(geo_data_final, aes(x = reported_age, y = reorder(location_clean, reporte
   theme_minimal() +
   labs(
     title = "Sanctuaries of Deep Time",
-    subtitle = "Age distribution of the four most populous ancient tree species",
-    x = "Reported Age (Years)",
+    subtitle = "Age variation across the most represented long-lived tree species",
+    x = "Estimated Age (Years)",
     y = "",
     color = "Species"
   ) +
@@ -192,7 +218,15 @@ ggplot(geo_data_final, aes(x = reported_age, y = reorder(location_clean, reporte
   )
 ```
 
-```{r species_boxplot}
+### Methods of Survival: Comparative Longevity Across Species
+
+While all species in this subset are capable of exceptional age, their longevity profiles differ in both central tendency and variability. Some, such as bristlecone pine, exhibit consistently high ages, with a mean lifespan exceeding 4,800 years and a maximum of 4,960 years, indicating a stable and well-adapted survival strategy. Others, such as giant sequoia, display slightly lower but still substantial ages, with an average around 3,150 years and a maximum of 3,266 years, while Sierra juniper and bald cypress fall closer to the 2,100–2,200 year range on average.
+
+These differences reflect underlying biological trade-offs. Species that achieve great age often do so through slow growth, dense wood, and resistance to environmental stressors such as drought, disease, and temperature extremes. However, these traits do not guarantee uniform outcomes; even within favorable species, most individuals do not reach the upper limits of observed lifespan. This is also reflected in the small number of specimens per species in this dataset, ranging from two to four individuals, which highlights that extreme age is observed rather than typical.
+
+The boxplot demonstrates that longevity is not a fixed species trait but a probabilistic outcome shaped by both genetics and environment. The oldest trees, therefore, should be understood not as typical representatives of their species, but as rare survivors at the extreme tail of a broader distribution.
+
+```{r species_boxplot, fig.width=14, fig.height=10}
 ggplot(geo_data_final, aes(x = reported_age, y = reorder(species_short, reported_age, FUN = median), fill = species_short)) +
   
   # The Boxplot shows the median and quartiles
@@ -208,8 +242,8 @@ ggplot(geo_data_final, aes(x = reported_age, y = reorder(species_short, reported
   
   theme_minimal() +
   labs(
-    title = "Ancient Tree Longevity Profiles",
-    subtitle = "Comparison the median age and variance across the four most populous species",
+    title = "Comparative Longevity Across Species",
+    subtitle = "Median lifespan and variability among the most common ancient tree species",
     x = "Reported Age (Years)",
     y = "",
     fill = "Species"

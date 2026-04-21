@@ -11,9 +11,9 @@
 
 
 
-<title>Portfolio 9</title>
+<title>Arboreal Chronology: The Living Record of Post-Pleistocene Resilience</title>
 
-<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.29/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -290,18 +290,354 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Portfolio 9</h1>
+<h1 class="title toc-ignore">Arboreal Chronology: The Living Record of
+Post-Pleistocene Resilience</h1>
 
 </div>
 
 
-<blockquote>
-<p>The projects should be numbered consecutively (i.e., in the order in
-which you began them), and should include for each project a description
-of the goal, the product (computer program, hand graph, computer graph,
-etc.), the data, and some interpretation. Reports must be reproducible
-and of high quality in terms of writing, grammar, presentation, etc.</p>
-</blockquote>
+<p>Ancient trees represent one of the most continuous living connections
+to the deep past, persisting across millennia of environmental change,
+climatic fluctuation, and human history. Unlike archaeological artifacts
+or written records, these organisms are not static remnants but ongoing
+biological systems whose lifespans extend far beyond the temporal scale
+of human institutions. Some of the oldest known specimens germinated
+before the rise of classical civilizations and remain alive today,
+functioning as living archives of ecological stability and
+resilience.</p>
+<p>Longevity in trees is not randomly distributed across the plant
+kingdom but is concentrated within a small number of highly specialized
+species adapted to marginal environments. Harsh conditions - such as
+aridity, poor soils, or high elevation - often suppress competition and
+slow growth, enabling certain species to prioritize durability over
+rapid expansion. In this way, extreme age is less a product of ideal
+conditions than of ecological constraint, where survival depends on
+persistence rather than productivity.</p>
+<pre class="r"><code># Load all required packages quietly
+suppressMessages({
+  library(tidyverse)
+  library(rvest)
+  library(janitor)
+})</code></pre>
+<p>The dataset for this analysis is compiled from the Wikipedia page
+“List of oldest trees,” which aggregates verified and estimated ages of
+individual specimens across multiple species and geographic regions. The
+table includes tree names, species classifications, locations, reported
+ages, and germination dates, though the structure contains
+inconsistencies typical of crowd-sourced records.</p>
+<p>To prepare the dataset for analysis, character fields are cleaned to
+remove citation artifacts and formatting irregularities, and species
+names are standardized to address inconsistent capitalization and
+concatenation. Tree status is inferred from descriptive notes,
+classifying each specimen as either “Living” or “Dead.” Reported ages
+are extracted as numeric values, while germination years are parsed and
+converted into a continuous timeline, with BCE dates represented as
+negative values.</p>
+<p>Duplicate tree names are disambiguated to preserve unique
+identifiers, and observations lacking valid temporal data are removed.
+These steps transform a semi-structured descriptive table into a
+consistent dataset suitable for chronological comparison and
+species-level analysis, while still reflecting the inherent limitations
+of historical and biological estimation.</p>
+<pre class="r"><code># ---- 1. Scrape table ----
+url &lt;- &quot;https://en.wikipedia.org/wiki/List_of_oldest_trees&quot;
+
+trees_raw &lt;- read_html(url) %&gt;%
+  html_node(&quot;table.wikitable&quot;) %&gt;%
+  html_table(fill = TRUE) %&gt;%
+  clean_names()
+
+# ---- 2. Clean table ----
+trees_final &lt;- trees_raw %&gt;%
+  mutate(
+    # Standardize tree names
+    name = str_trim(name),
+    name = str_replace_all(name, &quot;([a-z])(\\()&quot;, &quot;\\1 \\2&quot;),
+    
+    # Fix species &quot;squashing&quot;
+    species = str_replace_all(species, &quot;([a-z])([A-Z])&quot;, &quot;\\1 / \\2&quot;),
+    
+    # Clean citation noise (ex. [1])
+    across(where(is.character), ~str_remove_all(., &quot;\\[.*?\\]&quot;))
+  ) %&gt;%
+  mutate(
+    # Define tree status
+    status = ifelse(str_detect(notes, &quot;(?i)dead&quot;), &quot;Dead&quot;, &quot;Living&quot;),
+    
+    # Extract ages
+    reported_age = as.numeric(str_extract(str_remove_all(age_years, &quot;,&quot;), &quot;\\d+&quot;)),
+    
+    # Handle BCE years
+    raw_num = as.numeric(str_extract(year_germinated, &quot;\\d+&quot;)),
+    germination_year = case_when(
+      str_detect(year_germinated, &quot;BC|BCE&quot;) ~ raw_num * -1,
+      TRUE ~ raw_num
+    )
+  ) %&gt;%
+  # Fix duplicate names
+  group_by(name) %&gt;%
+  mutate(name = if (n() &gt; 1) {
+      paste0(name, &quot; (&quot;, row_number(), &quot;)&quot;)
+  } else {
+      name
+  }) %&gt;%
+ungroup() %&gt;%
+  
+  # Clean-up
+  filter(!is.na(germination_year), !is.na(reported_age)) %&gt;%
+  select(name, species, location, country, germination_year, reported_age, status)
+
+head(trees_final)</code></pre>
+<pre><code>## # A tibble: 6 × 7
+##   name             species location country germination_year reported_age status
+##   &lt;chr&gt;            &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;              &lt;dbl&gt;        &lt;dbl&gt; &lt;chr&gt; 
+## 1 Prometheus (WPN… Great … Wheeler… United…            -2936         4960 Living
+## 2 Methuselah       Great … White M… United…            -2644         4668 Living
+## 3 Alerce Milenari… Patago… Cordill… Chile              -1630         3655 Living
+## 4 CBR26            Giant … Sierra … United…            -1374         3266 Dead  
+## 5 D-21             Giant … Sierra … United…            -1305         3220 Dead  
+## 6 D-23             Giant … Sierra … United…            -1122         3075 Dead</code></pre>
+<div id="witnesses-to-civilization-tree-lifespans-in-historical-context"
+class="section level3">
+<h3>Witnesses to Civilization: Tree Lifespans in Historical Context</h3>
+<p>When situated along a unified timeline, the lifespans of the world’s
+oldest trees reveal a scale of continuity that contrasts with the
+episodic nature of human history. In this dataset, individual specimens
+span nearly four millennia - with germination dates ranging from
+approximately 2900 BCE to the early medieval period. The oldest recorded
+tree exceeds 4,900 years in age, while the median lifespan across all
+observations is close to 2,500 years, showing that extreme longevity is
+common within this group rather than limited to a single outlier.</p>
+<p>Several living trees predate major civilizational milestones that are
+often treated as foundational in historical narratives. Two specimens
+were already established before the construction of the Egyptian
+pyramids, and eight predate the traditional founding of Rome. By the end
+of the classical era - represented here by the fall of Rome in 476 CE -
+the majority of trees in the dataset (18 out of 19) had already
+germinated. These organisms do not simply intersect with human history;
+they persist across nearly its entire recorded span.</p>
+<p>The distribution of ages reinforces this pattern. All sampled trees
+exceed 1,000 years in age, with 14 surpassing 2,000 years and 7
+exceeding 3,000 years. Most of these individuals remain alive today,
+indicating that extreme age is not only a feature of the past but an
+ongoing biological condition. Rather than existing as relics, these
+trees continue to function as living systems whose lifespans connect
+ancient and modern worlds.</p>
+<pre class="r"><code># ---- 1. Define historical milestones ----
+milestones &lt;- data.frame(
+  year = c(-2560, -753, 476, 1492, 1945),
+  event = c(&quot;Pyramids Built&quot;, &quot;Rome Founded&quot;, &quot;Fall of Rome&quot;, 
+            &quot;Columbus&quot;, &quot;Nuclear Age&quot;)
+)
+
+# ---- 2. Pre-process to cap &quot;Living&quot; lifelines at the current year ----
+trees_plot &lt;- trees_final %&gt;%
+  mutate(
+    # If living, end at 2026; if dead, end at germination + age
+    end_year = if_else(status == &quot;Living&quot;, 2026, germination_year + reported_age)
+  )
+
+# ---- 3. Set height for the milestone &quot;shelf&quot; ----
+top_tree &lt;- nrow(trees_plot)
+shelf_height &lt;- top_tree + 2
+
+# ---- 4. Plot ----
+ggplot(trees_plot) +
+  # Tree lifeline
+  geom_segment(aes(x = germination_year, 
+                   xend = end_year,     
+                   y = reorder(name, germination_year), 
+                   yend = name, 
+                   color = status), 
+               linewidth = 1.2, alpha = 0.8) +
+  
+  # Vertical lines connecting dates to labels
+  geom_segment(data = milestones, 
+               aes(x = year, xend = year, y = top_tree + 0.5, yend = shelf_height - 0.2),
+               linetype = &quot;solid&quot;, color = &quot;grey70&quot;, linewidth = 0.3) +
+  
+  # Single horizontal line for labels
+  geom_text(data = milestones, 
+            aes(x = year, y = shelf_height, label = event), 
+            size = 2.8, color = &quot;grey30&quot;, fontface = &quot;italic&quot;, vjust = 0) +
+  
+  scale_color_manual(values = c(&quot;Living&quot; = &quot;darkolivegreen&quot;, &quot;Dead&quot; = &quot;firebrick4&quot;)) +
+  theme_minimal() +
+  labs(
+    title = &quot;Witnesses to History: A Chronology of the World&#39;s Oldest Trees&quot;,
+    subtitle = &quot;Individual tree lifespans contextualized within major historical milestones&quot;,
+    x = &quot;Timeline&quot;,
+    y = &quot;&quot;,
+    color = &quot;Status&quot;
+  ) +
+  
+  theme(
+    plot.title = element_text(hjust = 0.5, face = &quot;bold&quot;, size = 14),
+    plot.subtitle = element_text(hjust = 0.5, size = 10, margin = margin(b = 10)),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = &quot;bottom&quot;
+  ) +
+  
+  expand_limits(y = shelf_height + 2) +
+  
+  scale_x_continuous(
+    breaks = seq(-3000, 2000, 500),
+    labels = c(&quot;3000 BCE&quot;, &quot;2500 BCE&quot;, &quot;2000 BCE&quot;, &quot;1500 BCE&quot;, &quot;1000 BCE&quot;, 
+               &quot;500 BCE&quot;, &quot;0&quot;, &quot;500 CE&quot;, &quot;1000 CE&quot;, &quot;1500 CE&quot;, &quot;2000 CE&quot;)
+  )</code></pre>
+<p><img src="p09_files/figure-html/timeline_plot-1.png" width="1344" /></p>
+</div>
+<div
+id="sanctuaries-of-deep-time-the-geographic-distribution-of-ancient-trees"
+class="section level3">
+<h3>Sanctuaries of Deep Time: The Geographic Distribution of Ancient
+Trees</h3>
+<p>The geographic distribution of ancient trees reveals that extreme
+longevity is not evenly dispersed but concentrated within specific
+ecological niches. In this dataset, the pattern is also geographically
+uneven, with 15 of 19 recorded specimens located in the United States
+and only a small number distributed across Canada, Chile, China, and
+Italy. Species such as bristlecone pine, giant sequoia, and bald cypress
+dominate the upper ranges of age, reflecting evolutionary strategies
+tailored to distinct environmental pressures. Giant sequoias account for
+the largest number of observations (4 trees), followed by bald cypress
+and Sierra juniper (3 each), while bristlecone pine, though represented
+by only 2 specimens, exhibits the highest recorded ages, reaching up to
+4,960 years.</p>
+<p>These species are often found in regions where growth is slow and
+competition is limited, conditions that favor long-term survival over
+rapid expansion. Rather than forming dense clusters, the oldest
+specimens tend to exist as isolated individuals or small populations,
+reinforcing the idea that extreme age is an outlier condition even
+within long-lived species. The environments that sustain them -
+high-altitude basins, floodplains, or protected groves - function as
+“refugia” where disturbance is minimized and ecological stability can
+persist across centuries.</p>
+<p>The distribution also reflects a bias in documentation and
+preservation. Many of the most intensively studied ancient trees are
+located in protected areas or regions with established research
+infrastructure, and the strong concentration of observations within a
+single country suggests that the global record of extreme longevity may
+be incomplete. As a result, the observed pattern is both ecological and
+epistemological: it maps not only where ancient trees survive, but where
+they have been measured and recorded.</p>
+<pre class="r"><code># ---- 1. Pre-process data ----
+geo_data_final &lt;- trees_final %&gt;%
+  # Identify species names
+  mutate(
+    species_short = case_when(
+      str_detect(species, &quot;(?i)longaeva&quot;)      ~ &quot;Bristlecone Pine&quot;,
+      str_detect(species, &quot;(?i)giganteum&quot;)     ~ &quot;Giant Sequoia&quot;,
+      str_detect(species, &quot;(?i)grandis&quot;)       ~ &quot;Sierra Juniper&quot;,
+      str_detect(species, &quot;(?i)distichum&quot;)     ~ &quot;Bald Cypress&quot;,
+      str_detect(species, &quot;(?i)sempervirens&quot;)  ~ &quot;Coast Redwood&quot;,
+      str_detect(species, &quot;(?i)Fitzroya&quot;)      ~ &quot;Alerce&quot;,        
+      TRUE ~ &quot;Other&quot;
+    ),
+    
+    # Standardize tree location names
+    location_clean = location %&gt;%
+      str_replace_all(&quot;\\s*\\(([^)]+)\\)&quot;, &quot;, \\1&quot;) %&gt;% 
+      str_replace_all(&quot;,\\s+&quot;, &quot;,&quot;) %&gt;%
+      str_extract(&quot;[^,]+,[^,]+$&quot;) %&gt;% 
+      str_replace(&quot;,&quot;, &quot;, &quot;) %&gt;%
+      str_trim()
+  ) %&gt;%
+  # Only retain species with 2 or more specimines
+  group_by(species_short) %&gt;%
+  filter(n() &gt;= 2 &amp; species_short != &quot;Other&quot;) %&gt;%
+  ungroup()
+
+# ---- 2. Plot ----
+ggplot(geo_data_final, aes(x = reported_age, y = reorder(location_clean, reported_age), color = species_short)) +
+  geom_segment(aes(x = 0, xend = reported_age, y = location_clean, yend = location_clean), 
+               color = &quot;grey92&quot;, linewidth = 0.5) +
+  geom_point(size = 4, alpha = 0.9) +
+  
+  # Manual color assignment
+  scale_color_manual(values = c(
+    &quot;Bristlecone Pine&quot; = &quot;goldenrod3&quot;,
+    &quot;Giant Sequoia&quot;    = &quot;darkseagreen3&quot;,
+    &quot;Sierra Juniper&quot;   = &quot;cadetblue3&quot;,
+    &quot;Bald Cypress&quot;     = &quot;indianred3&quot;
+  )) +
+  
+  theme_minimal() +
+  labs(
+    title = &quot;Sanctuaries of Deep Time&quot;,
+    subtitle = &quot;Age variation across the most represented long-lived tree species&quot;,
+    x = &quot;Estimated Age (Years)&quot;,
+    y = &quot;&quot;,
+    color = &quot;Species&quot;
+  ) +
+  
+  theme(
+    legend.position = &quot;bottom&quot;,
+    plot.title = element_text(face = &quot;bold&quot;, size = 14, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, color = &quot;grey40&quot;, hjust = 0.5), 
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(size = 9)
+  )</code></pre>
+<p><img src="p09_files/figure-html/age_location_plot-1.png" width="1344" /></p>
+</div>
+<div id="methods-of-survival-comparative-longevity-across-species"
+class="section level3">
+<h3>Methods of Survival: Comparative Longevity Across Species</h3>
+<p>While all species in this subset are capable of exceptional age,
+their longevity profiles differ in both central tendency and
+variability. Some, such as bristlecone pine, exhibit consistently high
+ages, with a mean lifespan exceeding 4,800 years and a maximum of 4,960
+years, indicating a stable and well-adapted survival strategy. Others,
+such as giant sequoia, display slightly lower but still substantial
+ages, with an average around 3,150 years and a maximum of 3,266 years,
+while Sierra juniper and bald cypress fall closer to the 2,100–2,200
+year range on average.</p>
+<p>These differences reflect underlying biological trade-offs. Species
+that achieve great age often do so through slow growth, dense wood, and
+resistance to environmental stressors such as drought, disease, and
+temperature extremes. However, these traits do not guarantee uniform
+outcomes; even within favorable species, most individuals do not reach
+the upper limits of observed lifespan. This is also reflected in the
+small number of specimens per species in this dataset, ranging from two
+to four individuals, which highlights that extreme age is observed
+rather than typical.</p>
+<p>The boxplot demonstrates that longevity is not a fixed species trait
+but a probabilistic outcome shaped by both genetics and environment. The
+oldest trees, therefore, should be understood not as typical
+representatives of their species, but as rare survivors at the extreme
+tail of a broader distribution.</p>
+<pre class="r"><code>ggplot(geo_data_final, aes(x = reported_age, y = reorder(species_short, reported_age, FUN = median), fill = species_short)) +
+  
+  # The Boxplot shows the median and quartiles
+  geom_boxplot(alpha = 0.7, outlier.colour = &quot;black&quot;, outlier.shape = 1) +
+  
+  # Manual color assignment
+  scale_fill_manual(values = c(
+    &quot;Bristlecone Pine&quot; = &quot;goldenrod3&quot;, 
+    &quot;Giant Sequoia&quot;    = &quot;darkseagreen3&quot;, 
+    &quot;Sierra Juniper&quot;   = &quot;cadetblue3&quot;, 
+    &quot;Bald Cypress&quot;     = &quot;indianred3&quot;
+  )) +
+  
+  theme_minimal() +
+  labs(
+    title = &quot;Comparative Longevity Across Species&quot;,
+    subtitle = &quot;Median lifespan and variability among the most common ancient tree species&quot;,
+    x = &quot;Reported Age (Years)&quot;,
+    y = &quot;&quot;,
+    fill = &quot;Species&quot;
+  ) +
+  
+  theme(
+    legend.position = &quot;none&quot;,
+    plot.title = element_text(face = &quot;bold&quot;, size = 14, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, color = &quot;grey40&quot;, hjust = 0.5),
+    panel.grid.major.y = element_blank()
+  )</code></pre>
+<p><img src="p09_files/figure-html/species_boxplot-1.png" width="1344" /></p>
+</div>
 
 
 
