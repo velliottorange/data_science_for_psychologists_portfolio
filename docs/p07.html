@@ -310,7 +310,7 @@ waterways, trade routes, and fertile land, while higher elevations can
 provide strategic or climatic advantages, particularly in tropical
 regions. This project analyzes a dataset of cities around the world to
 examine how elevation varies across latitude, region, and population
-size, and to identify broader patterns in the vertical structure of
+size, and to identify broader patterns in the vertical dimension of
 human settlement.</p>
 <pre class="r"><code># Load all required packages quietly
 suppressMessages({
@@ -323,9 +323,9 @@ suppressMessages({
 demographic information for cities across multiple continents. Because
 the page presents data in several separate tables rather than a single
 unified structure, the scraper retrieves all tables with the same
-formatting and combines them into a single dataset. This approach
-ensures consistent coverage while preserving the original structure of
-the source.</p>
+formatting and combines them into a single dataset. This ensures
+consistent coverage while preserving the original structure of the
+source.</p>
 <p>The raw tables contain inconsistencies typical of scraped web data,
 including mixed formatting in numeric fields, embedded symbols, and
 variations in coordinate notation. Elevation and population values are
@@ -587,15 +587,15 @@ exceeding 4,000 meters, the vast majority of urban development occurs
 within a much narrower range. Specifically, the middle 50% of cities in
 this study are sandwiched between 59 and 1,622 meters, representing the
 core altitudinal zone for modern civilization.</p>
-<p>The data further shows a heavy “low-altitude bias.” Approximately 44%
+<p>The data further shows a heavy low-altitude bias. Approximately 44%
 of the cities surveyed are situated below 500 meters, where flat terrain
 and proximity to water support dense infrastructure. In contrast, only
-16.5% of cities successfully transition into “high-altitude”
-environments above 2,000 meters. This distribution confirms that while
-high-elevation living is possible, it remains a geographical exception.
-The core of the global urban system is anchored to low-to-moderate
-elevations, where the barriers to construction, transportation, and
-resource access are at their lowest.</p>
+16.5% of cities successfully transition into high-altitude environments
+above 2,000 meters. This distribution confirms that while high-elevation
+living is possible, it remains a geographical exception. The core of the
+global urban system is anchored to low-to-moderate elevations, where the
+barriers to construction, transportation, and resource access are at
+their lowest.</p>
 <pre class="r"><code>ggplot(cities_df, aes(x = latitude, y = elevation)) +
   # Use &#39;raster&#39; to create a heat gradient
   # Set contour = FALSE to fill the entire space with color
@@ -640,7 +640,7 @@ this 87-meter threshold is crossed, the average city size drops sharply
 to just 1.4 million. This suggests that while humans can settle at
 nearly any altitude, the logistical and economic requirements for a
 “Mega-city” are overwhelmingly met at sea level.</p>
-<p>This “scale gap” is likely driven by maritime access and topographic
+<p>This scale gap is likely driven by maritime access and topographic
 friction. Large-scale urbanism depends on the ability to move massive
 amounts of goods, food, and energy - tasks that are easiest and cheapest
 in low-lying coastal or river areas. As elevation increases, the costs

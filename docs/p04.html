@@ -411,10 +411,10 @@ collapse_plot &lt;- collapse_clean
 
 # Preview results
 glimpse(collapse_clean)</code></pre>
-<pre><code>## Rows: 434
+<pre><code>## Rows: 436
 ## Columns: 6
 ## $ year       &lt;chr&gt; &quot;226 BCE&quot;, &quot;27&quot;, &quot;ca. 27–30&quot;, &quot;140&quot;, &quot;312&quot;, &quot;558&quot;, &quot;1091&quot;, …
-## $ structure  &lt;chr&gt; &quot;Colossus of Rhodes Collapse&quot;, &quot;Fidenae amphitheatre collap…
+## $ structure  &lt;chr&gt; &quot;Colossus of Rhodes collapse&quot;, &quot;Fidenae amphitheatre collap…
 ## $ city       &lt;chr&gt; &quot;City of Rhodes&quot;, &quot;Fidenae&quot;, &quot;Jerusalem&quot;, &quot;Rome&quot;, &quot;Rome&quot;, &quot;…
 ## $ country    &lt;chr&gt; &quot;Island of Rhodes&quot;, &quot;Italia, Roman Empire&quot;, &quot;Judea, Roman E…
 ## $ type       &lt;chr&gt; &quot;Statue&quot;, &quot;Amphitheatre&quot;, &quot;Tower&quot;, &quot;Amphitheatre&quot;, &quot;Bridge&quot;…
@@ -443,7 +443,7 @@ summary_stats</code></pre>
 <pre><code>## # A tibble: 1 × 4
 ##   total_events max_casualties median_casualties mean_casualties
 ##          &lt;int&gt;          &lt;dbl&gt;             &lt;dbl&gt;           &lt;dbl&gt;
-## 1          434          85600              13.5            435.</code></pre>
+## 1          436          85600                14            439.</code></pre>
 <pre class="r"><code># Top 10 events
 top10 &lt;- collapse_plot %&gt;%
   slice_max(casualties, n = 10) %&gt;%
@@ -458,11 +458,11 @@ top10</code></pre>
 ##  3 Upper tier collapse of the Circus Maximus Rome             Italia…      13000
 ##  4 Ponte das Barcas                          Porto            Portug…       4000
 ##  5 South Fork Dam                            Johnstown        Pennsy…       2209
-##  6 Vajont Dam                                Friuli-Venezia … Italy         1900
-##  7 Rana Plaza collapse                       Savar            Dhaka,…       1134
-##  8 St. Francis Dam                           Santa Clarita    Califo…        600
-##  9 Sampoong Department Store collapse        Seoul            South …        502
-## 10 Eitai Bridge                              Tokyo            Japan          500</code></pre>
+##  6 Dunes Hotel                               Las Vegas        Nevada        1993
+##  7 Vajont Dam                                Friuli-Venezia … Italy         1900
+##  8 Rana Plaza collapse                       Savar            Dhaka,…       1134
+##  9 St. Francis Dam                           Santa Clarita    Califo…        600
+## 10 Sampoong Department Store collapse        Seoul            South …        502</code></pre>
 <pre class="r"><code># Ratio of largest to median event
 ratio &lt;- collapse_plot %&gt;%
   summarise(
@@ -563,18 +563,18 @@ top5_log_pred &lt;- collapse_numeric %&gt;%
   select(structure, rank, log_casualties, predicted_log)
 
 slope; intercept; top5_log_pred</code></pre>
-<pre><code>##  log_rank 
-## -1.764844</code></pre>
+<pre><code>## log_rank 
+## -1.78124</code></pre>
 <pre><code>## (Intercept) 
-##    4.865452</code></pre>
+##    4.914609</code></pre>
 <pre><code>## # A tibble: 5 × 4
 ##   structure                                  rank log_casualties predicted_log
 ##   &lt;chr&gt;                                     &lt;int&gt;          &lt;dbl&gt;         &lt;dbl&gt;
-## 1 Banqiao and Shimantan Dams                    1           4.93          4.87
-## 2 Fidenae amphitheatre collapse                 2           4.30          4.33
-## 3 Upper tier collapse of the Circus Maximus     3           4.11          4.02
-## 4 Ponte das Barcas                              4           3.60          3.80
-## 5 South Fork Dam                                5           3.34          3.63</code></pre>
+## 1 Banqiao and Shimantan Dams                    1           4.93          4.91
+## 2 Fidenae amphitheatre collapse                 2           4.30          4.38
+## 3 Upper tier collapse of the Circus Maximus     3           4.11          4.06
+## 4 Ponte das Barcas                              4           3.60          3.84
+## 5 South Fork Dam                                5           3.34          3.67</code></pre>
 <p>The log–log rank–size plot transforms the wide range of casualties
 onto a logarithmic scale, revealing the heavy-tailed nature of
 structural collapses. A linear trend on the log–log axes approximates

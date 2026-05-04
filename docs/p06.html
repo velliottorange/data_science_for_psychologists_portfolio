@@ -306,13 +306,12 @@ provide direct physical samples of objects formed during the early
 history of the solar system.</p>
 <p>The study of meteorite falls relies on recorded observations of
 objects seen entering the atmosphere and subsequently recovered. These
-records span several centuries and have been compiled from a combination
-of historical accounts and modern monitoring efforts. As a result, the
-available data reflects both the physical processes governing meteorite
-entry and the conditions under which observations are made.</p>
-<p>This project analyzes a dataset of confirmed meteorite falls to
-examine patterns in geographic distribution, timing, and
-classification.</p>
+records span several centuries and come from a combination of historical
+accounts and modern monitoring efforts, so the available data reflects
+both the physical processes governing meteorite entry and the conditions
+under which observations are made. This project analyzes a dataset of
+confirmed meteorite falls to examine patterns in geographic
+distribution, timing, and classification.</p>
 <pre class="r"><code># Load all required packages quietly
 suppressMessages({
   library(tidyverse)
@@ -329,15 +328,14 @@ and more recent events detected through modern monitoring systems.
 Because the page separates meteorite records into distinct sections -
 “Recent falls” and “Falls before automated monitoring” - the scraper
 retrieves each table individually and combines them into a unified
-dataset. This approach preserves the distinction between observation
-eras while allowing for consistent analysis across the full time
-range.</p>
+dataset. This preserves the distinction between observation eras while
+allowing for consistent analysis across the full time range.</p>
 <p>The raw tables contain a mixture of structured and unstructured text,
 including embedded citation markers, formatting artifacts, and
 inconsistent naming conventions. To produce a clean dataset, text fields
 are processed using regular expressions to remove bracketed references
-and extraneous symbols. Key variables—including meteorite name, fall
-date, country, region, and classification—are extracted by column
+and extraneous symbols. Key variables - including meteorite name, fall
+date, country, region, and classification - are extracted by column
 position to ensure stability across changes in table formatting.
 Additional variables are derived from the fall date, including year and
 month, allowing for temporal analysis at multiple scales.</p>
@@ -406,16 +404,16 @@ meteorites &lt;- bind_rows(
 
 # Preview results
 glimpse(meteorites)</code></pre>
-<pre><code>## Rows: 1,232
+<pre><code>## Rows: 1,234
 ## Columns: 8
-## $ name           &lt;chr&gt; &quot;Okulovka&quot;, &quot;McDonough&quot;, &quot;Maoming&quot;, &quot;Bordj Rhoraffa&quot;, &quot;…
-## $ fall_date      &lt;chr&gt; &quot;27 October 2025&quot;, &quot;26 June 2025&quot;, &quot;28 May 2025&quot;, &quot;20 M…
-## $ country        &lt;chr&gt; &quot;Russia&quot;, &quot;USA&quot;, &quot;China&quot;, &quot;Algeria&quot;, &quot;Poland&quot;, &quot;Belarus…
-## $ region         &lt;chr&gt; &quot;Novgorodskaya&quot;, &quot;Georgia&quot;, &quot;Guangdong&quot;, &quot;El Oued&quot;, &quot;Bi…
-## $ classification &lt;chr&gt; &quot;LL6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;H6&quot;, &quot;L5&quot;, &quot;LL4-6&quot;, &quot;L5…
+## $ name           &lt;chr&gt; &quot;Wadsworth&quot;, &quot;Okulovka&quot;, &quot;McDonough&quot;, &quot;Maoming&quot;, &quot;Bordj…
+## $ fall_date      &lt;chr&gt; &quot;17 March 2026&quot;, &quot;27 October 2025&quot;, &quot;26 June 2025&quot;, &quot;28…
+## $ country        &lt;chr&gt; &quot;USA&quot;, &quot;Russia&quot;, &quot;USA&quot;, &quot;China&quot;, &quot;Algeria&quot;, &quot;Poland&quot;, &quot;…
+## $ region         &lt;chr&gt; &quot;Ohio&quot;, &quot;Novgorodskaya&quot;, &quot;Georgia&quot;, &quot;Guangdong&quot;, &quot;El Ou…
+## $ classification &lt;chr&gt; &quot;Eucrite-mmict&quot;, &quot;LL6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;L6&quot;, &quot;H6&quot;, &quot;…
 ## $ period         &lt;chr&gt; &quot;1959–2025&quot;, &quot;1959–2025&quot;, &quot;1959–2025&quot;, &quot;1959–2025&quot;, &quot;19…
-## $ year           &lt;dbl&gt; 2025, 2025, 2025, 2025, 2025, 2024, 2024, 2024, 2024, 2…
-## $ month          &lt;chr&gt; &quot;October&quot;, &quot;June&quot;, &quot;May&quot;, &quot;May&quot;, &quot;February&quot;, &quot;December&quot;…</code></pre>
+## $ year           &lt;dbl&gt; 2026, 2025, 2025, 2025, 2025, 2025, 2024, 2024, 2024, 2…
+## $ month          &lt;chr&gt; &quot;March&quot;, &quot;October&quot;, &quot;June&quot;, &quot;May&quot;, &quot;May&quot;, &quot;February&quot;, &quot;…</code></pre>
 <div id="global-meteorite-fall-distribution-density-and-detection-bias"
 class="section level3">
 <h3>Global Meteorite Fall Distribution: Density and Detection Bias</h3>
@@ -547,7 +545,7 @@ meteorite_hemispheres &lt;- meteorites %&gt;%
       lat &lt; 0  ~ &quot;Southern Hemisphere&quot;,
       TRUE     ~ &quot;Unknown&quot;
     ),
-    # Re-factor with only the 12 valid months
+    # Re-factor with only the months
     month = factor(month, levels = valid_months)
   ) %&gt;%
   filter(hemisphere != &quot;Unknown&quot;)
@@ -652,7 +650,7 @@ only occasionally.</p>
 tier3_breakdown &lt;- meteorites %&gt;%
   mutate(
     year = as.numeric(str_extract(fall_date, &quot;\\d{4}&quot;)),
-    # Identify the specific &#39;Exotic&#39; sub-types
+    # Identify the specific &#39;exotic&#39; sub-types
     exotic_type = case_when(
       # Planetary: Fragments of the Moon and Mars
       str_detect(classification, &quot;(?i)Lunar|Martian|Shergottite|Nakhlite|Chassignite&quot;) ~ &quot;Planetary (Moon/Mars)&quot;,
@@ -669,7 +667,7 @@ tier3_breakdown &lt;- meteorites %&gt;%
       TRUE ~ NA_character_
     )
   ) %&gt;%
-  # Focus only on the &#39;Exotics&#39;
+  # Focus only on the &#39;exotics&#39;
   filter(!is.na(exotic_type) &amp; year &gt;= 1800 &amp; year &lt;= 2025) %&gt;%
   mutate(decade = (year %/% 10) * 10)
 
@@ -682,7 +680,7 @@ ggplot(tier3_breakdown, aes(x = decade, fill = exotic_type)) +
     linewidth = 0.2
   ) +
   scale_y_continuous(labels = scales::percent) +
-  # Manual Colors for scientific distinction
+  # Manual color assignment
   scale_fill_manual(
     values = c(
       &quot;Planetary (Moon/Mars)&quot;    = &quot;indianred3&quot;,

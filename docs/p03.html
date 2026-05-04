@@ -332,9 +332,8 @@ context. We then parse each table into a structured dataframe,
 standardize column names, and combine all tables into a master dataset.
 Afterward, we ensure that essential columns exist (ship name, flag, date
 sunk, notes, and coordinates), clean text fields of extra whitespace,
-and remove occasional CSS artifacts embedded in the coordinates column.
-This step produces a clean, reproducible dataset suitable for further
-temporal and spatial analysis.</p>
+and remove occasional CSS artifacts embedded in the coordinates
+column.</p>
 <pre class="r"><code># ---- 1. Function to scrape tables with dates and coordinates ----
 scrape_shipwreck_tables &lt;- function(url, source_state = NA) {
   page &lt;- tryCatch({
@@ -757,7 +756,7 @@ documents the aformentioned perils of internal navigation. These
 “ghosts” of the riverine frontier mark the path of inland development
 where river hazards and boiler explosions claimed vessels far beyond the
 reach of traditional coastal beacons.</p>
-<pre class="r"><code># ---- 1. Shipwreck heat map (The &quot;Risk&quot;) ----
+<pre class="r"><code># ---- 1. Shipwreck heatmap (The &quot;Risk&quot;) ----
 create_shipwreck_heat_map &lt;- function(wrecks, x_lim, y_lim, title_text) {
   ggplot() +
     theme_void() + 
@@ -803,7 +802,7 @@ create_shipwreck_heat_map &lt;- function(wrecks, x_lim, y_lim, title_text) {
     labs(title = title_text, subtitle = &quot;U.S. Shipwreck Hotspots&quot;)
 }
 
-# ---- 2. Lighthouse heat map (The &quot;Response&quot;) ----
+# ---- 2. Lighthouse heatmap (The &quot;Response&quot;) ----
 create_lighthouse_heat_map &lt;- function(lights, x_lim, y_lim, title_text) {
   ggplot() +
     theme_void() +
